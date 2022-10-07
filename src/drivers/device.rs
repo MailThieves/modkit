@@ -1,8 +1,13 @@
+use std::fmt;
+
+use serde::{Serialize};
+use chrono::Utc;
+
 use crate::drivers::Result;
 
 
 /// A bundle of data. This could take multiple formats, depending on which device the data is taken from.
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize)]
 pub enum Bundle {
     /// The data from a contact sensor. Just open or closed.
     ContactSensor {
@@ -14,6 +19,20 @@ impl Bundle {
     // Bundles should be able to:
     //      1. go to json format for the web api
     //      2. Be written with a timestamp to a format on the local box
+    fn to_json(&self) -> std::result::Result<String, serde_json::Error> {
+        serde_json::to_string_pretty(self)
+    }
+}
+
+impl fmt::Display for Bundle {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}\t", Utc::now().format("%Y-%m-%d %H:%M:%S")).expect("Couldn't write output to buffer");
+        match self {
+            Self::ContactSensor { open } => {
+                return writeln!(f, "ContactSensor({})", open);
+            }
+        }
+    }
 }
 
 /// A Device trait, which all devices should implement
