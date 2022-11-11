@@ -1,16 +1,20 @@
 #![allow(dead_code)]
 
+use log::*;
+
 mod drivers;
-mod api;
+mod ws;
+mod watchdog;
 
-use drivers::{contact_sensor::ContactSensor};
+fn init_logging() {
+    env_logger::Builder::new()
+        .format_timestamp(None)
+        .filter(None, LevelFilter::Info)
+        .init();
+}
 
-use crate::drivers::device::Device;
-
-
-fn main() {
-    // let devices = vec![ContactSensor::new("Door sensor", 0x01, "./sensor.txt")];
-    // drivers::watcher::watch(&devices);
-    let cs = ContactSensor::new("Door Sensor", 0x00, "sensor.txt");
-    println!("{}", cs.poll().unwrap());
+#[tokio::main]
+async fn main() {
+    init_logging();
+    ws::run().await;
 }

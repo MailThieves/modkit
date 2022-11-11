@@ -1,18 +1,21 @@
 use std::fmt;
 
-use serde::{Serialize};
+use serde::{Serialize, Deserialize};
 use chrono::Utc;
 
 use crate::drivers::Result;
 
 
 /// A bundle of data. This could take multiple formats, depending on which device the data is taken from.
-#[derive(Debug, PartialEq, Serialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Bundle {
     /// The data from a contact sensor. Just open or closed.
     ContactSensor {
         open: bool
     },
+    Error {
+        msg: String
+    }
 }
 
 impl Bundle {
@@ -22,6 +25,12 @@ impl Bundle {
     fn to_json(&self) -> std::result::Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
+
+    pub fn error(msg: &str) -> Self {
+        Self::Error {
+            msg: String::from(msg)
+        }
+    }
 }
 
 impl fmt::Display for Bundle {
@@ -30,6 +39,9 @@ impl fmt::Display for Bundle {
         match self {
             Self::ContactSensor { open } => {
                 return writeln!(f, "ContactSensor({})", open);
+            },
+            Self::Error { msg } => {
+                return writeln!(f, "Error({msg})")
             }
         }
     }
@@ -57,7 +69,8 @@ mod tests {
     fn test_contact_sensor_bundle() {
         let bundle = Bundle::ContactSensor { open: true };
         match bundle {
-            Bundle::ContactSensor { open: is_opened } => assert_eq!(is_opened, true)
+            Bundle::ContactSensor { open: is_opened } => assert_eq!(is_opened, true),
+            Bundle::Error { msg: _ } => assert!(false)
         }
     }
 

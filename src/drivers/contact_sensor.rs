@@ -1,6 +1,8 @@
 use std::fs::File;
 use std::io::Read;
 
+use log::*;
+
 use crate::drivers::Result;
 use crate::drivers::device::{Device, Bundle};
 
@@ -52,12 +54,14 @@ impl Device for ContactSensor {
         match self.poll() {
             Ok(Bundle::ContactSensor { open }) => return Ok(open),
             Err(e) => return Err(e),
+            // other types of data bundles will never be returned
+            _ => panic!()
         }
     }
 
     /// What the do when the watcher determines the device is activated
     fn on_activate(&self) -> Result<()> {
-        println!("===== Contact Sensor got activated!!! =====");
+        info!("===== Contact Sensor got activated!!! =====");
         Ok(())
     }
 }
