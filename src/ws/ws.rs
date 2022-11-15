@@ -3,11 +3,13 @@ use std::sync::Arc;
 
 use futures::{FutureExt, StreamExt};
 use log::*;
+use serde::__private::de;
 use tokio::sync::{mpsc, Mutex};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
 
-use crate::drivers::device::Bundle;
+use crate::drivers::contact_sensor::ContactSensor;
+use crate::drivers::device::{Bundle, DeviceType, Device};
 use crate::ws::event::{Event, EventKind};
 
 pub(crate) type Clients = Arc<Mutex<HashMap<String, Client>>>;
@@ -68,7 +70,6 @@ pub async fn client_connection(ws: WebSocket, id: String, clients: Clients, mut 
     info!("{} disconnected", id);
 }
 
-
 /// handles an incoming Event through the websocket
 /// and returns a response Event
 async fn handle_message(msg: Message) -> Event {
@@ -78,7 +79,11 @@ async fn handle_message(msg: Message) -> Event {
         // Otherwise, return a message containing the error
         Err(e) => {
             error!("Couldn't convert websocket message to string: {:?}", msg);
-            return Event::new(EventKind::Error, Some(Bundle::error(&format!("{:?}", e))));
+            return Event::new(
+                EventKind::Error,
+                None,
+                Some(Bundle::error(&format!("{:?}", e))),
+            );
         }
     };
 
@@ -90,29 +95,50 @@ async fn handle_message(msg: Message) -> Event {
         // Otherwise return an error event
         Err(e) => {
             error!("Error: couldn't deserialize the message into an event. You likely provided a bad message.");
-            return Event::new(
-                EventKind::Error,
-                Some(Bundle::error(&format!("Bad message: {}", e))),
-            );
+            return Event::error(&format!("Bad message: {}", e));
         }
     };
 
+    // Only certain kinds of events are "incoming events"
     match event.kind() {
-        EventKind::HealthCheck => return Event::new(EventKind::HealthCheck, None),
-        EventKind::DoorOpened => return wrong_way(),
-        EventKind::MailDelivered => return wrong_way(),
-        EventKind::MailPickedUp => return wrong_way(),
-        EventKind::PollDevice => return Event::new(EventKind::PollDeviceResult, Some(Bundle::ContactSensor { open: true })),
-        EventKind::PollDeviceResult => return wrong_way(),
-        EventKind::Error => return wrong_way(),
+        EventKind::HealthCheck => return Event::new(EventKind::HealthCheck, None, None),
+        EventKind::PollDevice => {
+            // If they send a PollDevice event, make sure they provided a DeviceType
+            if let Some(dev_type) = event.device_type() {
+                // If so, return a PollDeviceResult with the data bundle from that device
+                match poll_device(&dev_type) {
+                    Ok(bundle) => return Event::new(EventKind::PollDeviceResult, Some((*dev_type).clone()), Some(bundle)),
+                    // If we encounter an error, return an error bundle
+                    Err(e) => return Event::error(&e)
+                }
+            } else {
+                // Otherwise return an error
+                return Event::error(r#"Please provide a device type to poll ("device": "Camera" for example)"#);
+            }
+        }
+        // If it's not an incoming Event, return an error Event
+        _ => return wrong_way()
     }
 }
 
 fn wrong_way() -> Event {
-    Event::new(
-        EventKind::Error,
-        Some(Bundle::Error {
-            msg: format!("this Event type should only be sent from the server, not the from the client")
-        })
-    )
+    Event::error(&format!(
+        "this Event type should only be sent from the server, not the from the client"
+    ))
+}
+
+fn poll_device(dev_type: &DeviceType) -> Result<Bundle, String> {
+    let bundle = match dev_type {
+        DeviceType::ContactSensor => {
+            let sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
+            sensor.poll()
+        },
+        DeviceType::Camera => {
+            // get camera stuff here
+            todo!();
+        },
+        DeviceType::Light => todo!(),
+    };
+
+    bundle.map_err(|e| format!("{}", e) )
 }

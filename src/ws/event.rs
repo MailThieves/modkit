@@ -1,17 +1,19 @@
-//! An event passed through a WebSocket
+//! An event passed through websockets
 use serde::{Serialize, Deserialize};
 use warp::ws::Message;
 
-use crate::drivers::device::Bundle;
+use crate::drivers::device::{Bundle, DeviceType};
 
 /// The kind of event being sent
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub enum EventKind {
+    // Incoming events
     HealthCheck,
+    PollDevice,
+    // Outgoing events
     MailDelivered,
     MailPickedUp,
     DoorOpened,
-    PollDevice,
     PollDeviceResult,
     Error
 }
@@ -26,21 +28,36 @@ pub struct Event {
     /// This is typically only created by the ws server, not the client
     #[serde(skip_deserializing)]
     timestamp: String,
+    /// Which device this event references, if any
+    device: Option<DeviceType>,
     /// The optional data bundle being sent
     data: Option<Bundle>
 }
 
 impl Event {
-    pub fn new(kind: EventKind, data: Option<Bundle>) -> Self {
+    pub fn new(kind: EventKind, device: Option<DeviceType>, data: Option<Bundle>) -> Self {
         Self {
             kind,
             timestamp: chrono::Local::now().to_string(),
+            device,
             data
         }
     }
 
+    pub fn error(msg: &str) -> Self {
+        Self::new(EventKind::Error, None, Some(
+            Bundle::Error {
+                msg: msg.to_string()
+            }
+        ))
+    }
+
     pub fn kind(&self) -> &EventKind {
         &self.kind
+    }
+
+    pub fn device_type(&self) -> Option<&DeviceType> {
+        self.device.as_ref()
     }
 
     pub fn data(&self) -> Option<&Bundle> {
@@ -69,8 +86,9 @@ mod tests {
 
     #[test]
     fn test_build_event() {
-        let event = Event::new(EventKind::HealthCheck, None);
+        let event = Event::new(EventKind::HealthCheck, Some(DeviceType::Camera), None);
         assert_eq!(event.kind(), &EventKind::HealthCheck);
+        assert_eq!(event.device_type().unwrap(), &DeviceType::Camera);
         assert_eq!(event.data(), None);   
     }
 

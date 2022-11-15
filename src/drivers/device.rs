@@ -5,6 +5,12 @@ use chrono::Utc;
 
 use crate::drivers::Result;
 
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+pub enum DeviceType {
+    Camera,
+    Light,
+    ContactSensor,
+}
 
 /// A bundle of data. This could take multiple formats, depending on which device the data is taken from.
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
