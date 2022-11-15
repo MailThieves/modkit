@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use futures::{FutureExt, StreamExt};
 use log::*;
-use serde::__private::de;
 use tokio::sync::{mpsc, Mutex};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
@@ -135,9 +134,12 @@ fn poll_device(dev_type: &DeviceType) -> Result<Bundle, String> {
         },
         DeviceType::Camera => {
             // get camera stuff here
-            todo!();
+            Ok(Bundle::Camera { placeholder: format!("Placeholder data") })
         },
-        DeviceType::Light => todo!(),
+        DeviceType::Light => {
+            // Get light state
+            Ok(Bundle::Light { on: true })
+        },
     };
 
     bundle.map_err(|e| format!("{}", e) )

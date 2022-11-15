@@ -1,7 +1,7 @@
 use std::fmt;
 
-use serde::{Serialize, Deserialize};
 use chrono::Utc;
+use serde::{Deserialize, Serialize};
 
 use crate::drivers::Result;
 
@@ -13,15 +13,21 @@ pub enum DeviceType {
 }
 
 /// A bundle of data. This could take multiple formats, depending on which device the data is taken from.
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub enum Bundle {
     /// The data from a contact sensor. Just open or closed.
     ContactSensor {
-        open: bool
+        open: bool,
     },
     Error {
-        msg: String
-    }
+        msg: String,
+    },
+    Camera {
+        placeholder: String,
+    },
+    Light {
+        on: bool,
+    },
 }
 
 impl Bundle {
@@ -34,21 +40,22 @@ impl Bundle {
 
     pub fn error(msg: &str) -> Self {
         Self::Error {
-            msg: String::from(msg)
+            msg: String::from(msg),
         }
     }
 }
 
 impl fmt::Display for Bundle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}\t", Utc::now().format("%Y-%m-%d %H:%M:%S")).expect("Couldn't write output to buffer");
+        write!(f, "{}\t", Utc::now().format("%Y-%m-%d %H:%M:%S"))
+            .expect("Couldn't write output to buffer");
         match self {
             Self::ContactSensor { open } => {
                 return writeln!(f, "ContactSensor({})", open);
-            },
-            Self::Error { msg } => {
-                return writeln!(f, "Error({msg})")
             }
+            Self::Camera { placeholder } => return writeln!(f, "Camera({placeholder})"),
+            Self::Light { on } => return writeln!(f, "Light(on: {on})"),
+            Self::Error { msg } => return writeln!(f, "Error({msg})"),
         }
     }
 }
@@ -66,7 +73,6 @@ pub trait Device {
     fn on_activate(&self) -> Result<()>;
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -76,8 +82,7 @@ mod tests {
         let bundle = Bundle::ContactSensor { open: true };
         match bundle {
             Bundle::ContactSensor { open: is_opened } => assert_eq!(is_opened, true),
-            Bundle::Error { msg: _ } => assert!(false)
+            _ => assert!(false)
         }
     }
-
 }

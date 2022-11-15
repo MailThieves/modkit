@@ -39,6 +39,7 @@ impl Device for ContactSensor {
     fn poll(&self) -> Result<super::device::Bundle> {
         // This is temporary, I'm using the contents of a file to simulate the switch
         // since I don't have a physical switch yet
+        trace!("Trying to read a 1 or 0 from ./sensor.txt (temporary placeholder until we get the hardware)");
         let mut buffer = String::new();
         File::open(&self.port)
             .unwrap()
@@ -61,7 +62,7 @@ impl Device for ContactSensor {
 
     /// What the do when the watcher determines the device is activated
     fn on_activate(&self) -> Result<()> {
-        info!("===== Contact Sensor got activated!!! =====");
+        info!("===== Contact Sensor is activated!!! =====");
         Ok(())
     }
 }

@@ -5,7 +5,7 @@ use warp::ws::Message;
 use crate::drivers::device::{Bundle, DeviceType};
 
 /// The kind of event being sent
-#[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum EventKind {
     // Incoming events
     HealthCheck,
@@ -19,7 +19,7 @@ pub enum EventKind {
 }
 
 /// An Event struct, that can be sent to or recieved from a websocket client
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Event {
     /// The event type
     kind: EventKind,
