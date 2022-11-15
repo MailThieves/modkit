@@ -82,6 +82,8 @@ async fn handle_message(msg: Message) -> Event {
         }
     };
 
+    info!("Got a message from the client: {:?}", msg);
+
     let event: Event = match serde_json::from_str(&msg) {
         // If we can get an event from the message, do so
         Ok(event) => event,
@@ -97,11 +99,20 @@ async fn handle_message(msg: Message) -> Event {
 
     match event.kind() {
         EventKind::HealthCheck => return Event::new(EventKind::HealthCheck, None),
-        EventKind::DoorOpened => todo!(),
-        EventKind::MailDelivered => todo!(),
-        EventKind::MailPickedUp => todo!(),
-        EventKind::PollDevice => todo!(),
-        EventKind::PollDeviceResult => todo!(),
-        EventKind::Error => todo!(),
+        EventKind::DoorOpened => return wrong_way(),
+        EventKind::MailDelivered => return wrong_way(),
+        EventKind::MailPickedUp => return wrong_way(),
+        EventKind::PollDevice => return Event::new(EventKind::PollDeviceResult, Some(Bundle::ContactSensor { open: true })),
+        EventKind::PollDeviceResult => return wrong_way(),
+        EventKind::Error => return wrong_way(),
     }
+}
+
+fn wrong_way() -> Event {
+    Event::new(
+        EventKind::Error,
+        Some(Bundle::Error {
+            msg: format!("this Event type should only be sent from the server, not the from the client")
+        })
+    )
 }
