@@ -1,5 +1,5 @@
 # About
-This package is the software that runs in the mailbox (the "modkit"). It will start a webserver and listen for web traffic related to the mailbox. See the [[Event API]] documentation for specific info on how that works.
+This package is the software that runs in the mailbox (the "modkit"). It will start a webserver and listen for web traffic related to the mailbox. See the [Event API](Event%20API.md) documentation for specific info on how that works.
 
 # Running
 
@@ -45,4 +45,4 @@ Once you install these tools through the instructions they give you, you want to
 The advantage of compiling on your own is that when new changes are pushed, you can pull them and immediately use them. `cargo run` will recompile (if necessary) and run for you.
 
 # Next Steps
-Once you have the webserver running, you can start talking to it through websockets. See the [[Event API]] docs for more information.
+Once you have the webserver running, you can start talking to it through websockets. See the [Event API](Event%20API.md) docs for more information.
