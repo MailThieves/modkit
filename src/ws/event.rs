@@ -18,6 +18,28 @@ pub enum EventKind {
     Error
 }
 
+impl EventKind {
+    pub fn is_outgoing(&self) -> bool {
+        match self {
+            // Outgoing events
+            Self::MailDelivered => true,
+            Self::MailPickedUp => true,
+            Self::DoorOpened => true,
+            Self::PollDeviceResult => true,
+            Self::Error => true,
+            // Incoming events
+            Self::HealthCheck => false,
+            Self::PollDevice => false
+            // note that i'm not using _ as a catch all; don't want to accidentally miss a
+            // new event type that may be outgoing
+        }
+    }
+
+    pub fn is_incoming(&self) -> bool {
+        !self.is_outgoing()
+    }
+}
+
 /// An Event struct, that can be sent to or recieved from a websocket client
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Event {
@@ -98,5 +120,28 @@ mod tests {
         for e_string in events {
             assert!(serde_json::from_str::<Event>(&e_string).is_ok());
         }
+    }
+
+    #[test]
+    fn test_event_is_kind_incoming_outgoing() {
+        assert!(EventKind::MailDelivered.is_outgoing());
+        assert!(EventKind::MailPickedUp.is_outgoing());
+        assert!(EventKind::Error.is_outgoing());
+        assert!(EventKind::DoorOpened.is_outgoing());
+        assert!(EventKind::PollDeviceResult.is_outgoing());
+    
+        assert!(EventKind::PollDevice.is_incoming());
+        assert!(EventKind::HealthCheck.is_incoming());
+    }
+
+    #[test]
+    fn test_event_is_incoming_outgoing() {
+        assert!(
+            Event::new(EventKind::DoorOpened, None, None).kind().is_outgoing()
+        );
+
+        assert!(
+            Event::new(EventKind::PollDevice, None, None).kind().is_incoming()
+        );
     }
 }

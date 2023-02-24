@@ -98,7 +98,11 @@ async fn handle_message(msg: Message) -> Event {
         }
     };
 
-    // Only certain kinds of events are "incoming events"
+    // Filter out outgoing events; they shouldn't be allowed
+    if event.kind().is_outgoing() {
+        return wrong_way();
+    }
+
     match event.kind() {
         EventKind::HealthCheck => return Event::new(EventKind::HealthCheck, None, None),
         EventKind::PollDevice => {
@@ -115,14 +119,15 @@ async fn handle_message(msg: Message) -> Event {
                 return Event::error(r#"Please provide a device type to poll ("device": "Camera" for example)"#);
             }
         }
-        // If it's not an incoming Event, return an error Event
-        _ => return wrong_way()
+        // We already filtered out outgoing events, so this must mean we added a new
+        // type of incoming event and didn't write a handler for it
+        _ => panic!("Incoming event with no flight plan. This shouldn't happen.")
     }
 }
 
 fn wrong_way() -> Event {
     Event::error(&format!(
-        "this Event type should only be sent from the server, not the from the client"
+        "this Event type should only be sent from the server, not the from the client. Try another event type."
     ))
 }
 

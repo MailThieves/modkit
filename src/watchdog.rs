@@ -19,7 +19,16 @@ pub async fn watch(clients: &mut Clients) {
     let mut event: Option<Event> = None;
 
     loop {
+
+        // it's been a while since I wrote this but I think what's happening is that
+        // This continually checks for changes in state. When a change is found, generate an event and
+        // send it at the end of the loop.
+        //
+        // We may need to implement a queue of events if there are multiple at once.
+        // 
+        // TODO: if the contact sensor continually errors, will this always be false?
         if door_sensor.is_active().unwrap_or(false) != door_sensor_old_state {
+            // TODO: is_active() calls poll() anyway, you should only call it once
             let bundle = match door_sensor.poll() {
                 Ok(bundle) => {
                     if let Bundle::ContactSensor { open } = bundle {

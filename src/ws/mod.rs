@@ -13,7 +13,7 @@ mod handlers;
 pub async fn run() {
     info!("Running the WebSocket server");
 
-    let mut ws_clients: ws::Clients = Arc::new(Mutex::new(HashMap::new()));
+    let ws_clients: ws::Clients = Arc::new(Mutex::new(HashMap::new()));
 
     let register = warp::path("register");
     let register_routes = register
