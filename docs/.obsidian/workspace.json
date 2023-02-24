@@ -4,17 +4,17 @@
     "type": "split",
     "children": [
       {
-        "id": "be45b48e74039572",
+        "id": "807f9b8386b74b13",
         "type": "tabs",
         "children": [
           {
-            "id": "d33729a2ee3825d7",
+            "id": "732bdf64ae932161",
             "type": "leaf",
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Event API.md",
-                "mode": "preview",
+                "file": "Quickstart.md",
+                "mode": "source",
                 "source": false
               }
             }
@@ -85,7 +85,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "Event API.md",
+                "file": "Quickstart.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -102,9 +102,9 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "Event API.md",
+                "file": "Quickstart.md",
                 "linksCollapsed": false,
-                "unlinkedCollapsed": true
+                "unlinkedCollapsed": false
               }
             }
           },
@@ -125,12 +125,12 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "Event API.md"
+                "file": "Quickstart.md"
               }
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -146,9 +146,10 @@
       "command-palette:Open command palette": false
     }
   },
-  "active": "d33729a2ee3825d7",
+  "active": "0374d7fdc25c4b91",
   "lastOpenFiles": [
     "Event API.md",
-    "Untitled.md"
+    "Quickstart.md",
+    "Event.md"
   ]
 }
