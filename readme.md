@@ -4,4 +4,3 @@ This is the code that will run in the mailbox. It will contain the drivers for a
 # Getting Started
 
 The `docs/` folder contains detailed documentation for this repository. See the [quickstart guide](docs/Quickstart.md) for immediate help.
-

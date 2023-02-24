@@ -1,21 +1,25 @@
 # Getting Started
 The modkit package will start up a webserver when run. This web server does 2 things:
+
 1. Expose a `/register` route
 2. Expose a WebSocket server
 
 ## The `/register` route
+
 The purpose of this route is to generate a websocket ID for a client. To use it, send a `GET` request to `/register`. For example, if the webserver is running on `localhost:3012`, you would send a `GET` request to `localhost:3012/register`. That request will return a WebSocket URL in a JSON package like the one below.
+
 ```JSON
 {
 	"url": "ws://127.0.0.1:3012/ws/761a39340f054e5aabaf347aaae6d838"
 }
 ```
 
-The long string at the end is an ID unique for each client. We go through this register process to ensure that every client has a unique ID. 
+The long string at the end is an ID unique for each client. We go through this register process to ensure that every client has a unique ID.
 
-Note that `127.0.0.1` is the same as `localhost`. 
+Note that `127.0.0.1` is the same as `localhost`.
 
 ## Connecting to the WebSocket
+
 Once you send the request above and you have a WebSocket url, you're ready to connect. There are several ways to connect, but here's an example in plain JavaScript.
 
 ```js
@@ -31,8 +35,8 @@ socket.addEventListener('message', (event) => {
 });
 ```
 
-
 # Events
+
 The way communication happens between the interface and the modkit API is through the `Event` payload. Events are JSON objects that follow a certain format. Here's the definition of an `Event`.
 
 ```rust
@@ -71,6 +75,7 @@ The event kind (`EventKind`) determines what the `Event` means. For example, the
 Some event kinds are marked as `Interface -> API`, and some `API -> Interface`. The API will refuse requests that it's not expecting (ie. if the interface tries to tell the modkit API that mail was delivered, it will refuse because that doesn't make sense). 
 
 ## Examples
+
 Here's some examples of `Event` based communication
 
 ### Health check
