@@ -1,4 +1,3 @@
-use std::thread::sleep;
 use std::time::Duration;
 use log::*;
 
@@ -7,8 +6,9 @@ use crate::drivers::device::{Device, DeviceType, Bundle};
 use crate::ws::event::{Event, EventKind};
 use crate::ws::ws::Clients;
 
-pub async fn watch(clients: &mut Clients) {
-    
+
+pub async fn watch(clients: &Clients) {
+    info!("Running the watchdog");
     let door_sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
     let mut door_sensor_old_state = match door_sensor.poll() {
         Ok(Bundle::ContactSensor { open }) => open,
@@ -29,6 +29,7 @@ pub async fn watch(clients: &mut Clients) {
         // TODO: if the contact sensor continually errors, will this always be false?
         if door_sensor.is_active().unwrap_or(false) != door_sensor_old_state {
             // TODO: is_active() calls poll() anyway, you should only call it once
+            door_sensor.on_activate().unwrap();
             let bundle = match door_sensor.poll() {
                 Ok(bundle) => {
                     if let Bundle::ContactSensor { open } = bundle {
@@ -52,6 +53,6 @@ pub async fn watch(clients: &mut Clients) {
             drop(lock);
         }
         event = None;
-        sleep(Duration::from_secs(1));
+        tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }

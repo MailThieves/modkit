@@ -1,19 +1,14 @@
 use log::*;
-use warp::Filter;
-use std::sync::Arc;
-use std::collections::HashMap;
 
-use tokio::sync::Mutex;
+use warp::Filter;
 
 
 pub mod event;
 pub mod ws;
 mod handlers;
 
-pub async fn run() {
+pub async fn run(ws_clients: &ws::Clients) {
     info!("Running the WebSocket server");
-
-    let ws_clients: ws::Clients = Arc::new(Mutex::new(HashMap::new()));
 
     let register = warp::path("register");
     let register_routes = register
@@ -36,8 +31,6 @@ pub async fn run() {
         .or(ws_routes)
         .with(warp::cors().allow_any_origin());
 
-
-    // crate::watchdog::watch(&mut ws_clients).await;
-
-    warp::serve(routes).run(([127, 0, 0, 1], 3012)).await;
+    
+    warp::serve(routes).run(([127, 0, 0, 1], 3012)).await
 }

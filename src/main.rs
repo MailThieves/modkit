@@ -1,6 +1,11 @@
 #![allow(dead_code)]
 
+use std::sync::Arc;
+use std::collections::HashMap;
+
 use log::*;
+
+use tokio::sync::Mutex;
 
 mod drivers;
 mod ws;
@@ -16,5 +21,12 @@ fn init_logging() {
 #[tokio::main]
 async fn main() {
     init_logging();
-    ws::run().await;
+
+    let ws_clients: ws::ws::Clients = Arc::new(Mutex::new(HashMap::new()));
+
+    // This will work! I think! We just need to let them share data
+    tokio::join!(
+        ws::run(&ws_clients),
+        watchdog::watch(&ws_clients)
+    );
 }
