@@ -21,35 +21,43 @@ pub async fn watch(clients: &Clients) -> Result<(), ()> {
 
     // First, set up our door sensor
     let mut door_sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
-    
-    let mut events: Vec<Event> = Vec::new();
+
+    let mut event_queue: Vec<Event> = Vec::new();
 
     loop {
 
+        // if the door sensor changes
         if door_sensor.changed().unwrap_or(false) {
+            // Call the on_activate() function
             door_sensor.on_activate().unwrap();
+            // Get a copy of the state
             let bundle = door_sensor.state().unwrap().clone();
-            events.push(Event::new(
+            // Queue up an event to send with the door state
+            event_queue.push(Event::new(
                 EventKind::DoorOpened,
                 Some(DeviceType::ContactSensor),
                 Some(bundle),
             ));
+
+            // Here we should also determine if mail is delivered or not. This will require the camera.
         }
 
-        for ev in &events {
+
+        // For all events in the queue, send them to all clients
+        for event in &event_queue {
             let lock = clients.lock().await;
             for (id, client) in lock.iter() {
                 info!("Sending to client {id}");
                 if let Some(sender) = &client.sender {
                     sender
-                        .send(Ok(ev.clone().to_msg()))
+                        .send(Ok(event.clone().to_msg()))
                         .expect("Couldn't send message to client");
                 }
             }
             drop(lock);
         }
 
-        events.clear();
+        event_queue.clear();
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }
