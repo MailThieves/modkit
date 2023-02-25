@@ -12,7 +12,9 @@ pub struct ContactSensor {
     // TODO: rename this to GPIO pin?
     addr: u8, 
     // TODO: Get rid of this?
-    port: String   
+    port: String,
+    /// Storing the state can be useful when watching for changes
+    state: Option<Bundle>
 }
 
 impl ContactSensor {
@@ -22,7 +24,29 @@ impl ContactSensor {
             name: String::from(name),
             addr,
             port: String::from(port),
+            state: None
         }
+    }
+}
+
+impl ContactSensor {
+    pub fn changed(&mut self) -> Result<bool> {
+        let new = self.poll()?;
+
+        // If there is no old state, or is the old and new state is different
+        if self.state.is_none() || *self.state.as_ref().unwrap() != new {
+            // Then update the old state 
+            self.state = Some(new);
+            // and return that there was a change
+            return Ok(true);
+        }
+
+        // Otherwise return false
+        Ok(false)
+    }
+
+    pub fn state(&self) -> Option<&Bundle> {
+        self.state.as_ref()
     }
 }
 
@@ -124,5 +148,23 @@ mod tests {
         assert_eq!(cs.is_active(), Ok(false));
         set_door("1");
         assert_eq!(cs.is_active(), Ok(true));
+    }
+
+    #[test]
+    fn test_changed() {
+        set_door("0");
+        let mut cs = cs();
+
+        assert_eq!(cs.changed(), Ok(true));
+        assert_eq!(cs.changed(), Ok(false));
+        assert_eq!(cs.changed(), Ok(false));
+
+        set_door("1");
+        assert_eq!(cs.changed(), Ok(true));
+        assert_eq!(cs.changed(), Ok(false));
+
+        set_door("0");
+        assert_eq!(cs.changed(), Ok(true));
+        assert_eq!(cs.changed(), Ok(false));
     }
 }
