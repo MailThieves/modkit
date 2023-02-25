@@ -10,6 +10,7 @@ use tokio::sync::Mutex;
 mod drivers;
 mod ws;
 mod watchdog;
+mod store;
 
 fn init_logging() {
     env_logger::Builder::new()
