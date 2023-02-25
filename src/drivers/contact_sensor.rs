@@ -9,7 +9,9 @@ use crate::drivers::device::{Device, Bundle};
 #[derive(Debug)]
 pub struct ContactSensor {
     name: String,
+    // TODO: rename this to GPIO pin?
     addr: u8, 
+    // TODO: Get rid of this?
     port: String   
 }
 
@@ -50,7 +52,7 @@ impl Device for ContactSensor {
         Ok(Bundle::ContactSensor { open: state })
     }
 
-    // Calls poll and return Ok(true), Ok(false), or Err(e)
+    // Calls `poll()` and return Ok(true), Ok(false), or Err(e)
     fn is_active(&self) -> Result<bool> {
         match self.poll() {
             Ok(Bundle::ContactSensor { open }) => return Ok(open),
@@ -60,7 +62,7 @@ impl Device for ContactSensor {
         }
     }
 
-    /// What the do when the watcher determines the device is activated
+    /// What to do when the watcher determines the device is activated
     fn on_activate(&self) -> Result<()> {
         info!("===== Contact Sensor is activated!!! =====");
         Ok(())

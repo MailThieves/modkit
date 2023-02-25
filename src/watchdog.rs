@@ -7,12 +7,35 @@ use crate::ws::event::{Event, EventKind};
 use crate::ws::ws::Clients;
 
 
-pub async fn watch(clients: &Clients) {
+// 1. Watch for door opening
+// 2. Trigger the light
+// 3. Trigger the camera
+// 4. Send an event to the clients
+// 5. profit?
+//
+// The events that could be sent from this loop:
+// 1. MailDelivered (if determinable)
+// 2. MailPickedUp  (if determinable)
+// 3. DoorOpened    (if undeterminable)
+pub async fn watch(clients: &Clients) -> Result<(), ()> {
     info!("Running the watchdog");
+
+
+    // First, set up our door sensor
     let door_sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
+
+    // Get the current state of the door sensor
     let mut door_sensor_old_state = match door_sensor.poll() {
         Ok(Bundle::ContactSensor { open }) => open,
-        _ => panic!()
+        // If there's an error, then early return
+        Err(e) => {
+            error!("{e}");
+            return Err(());
+        } 
+        _ => {
+            error!("Couldn't retrieve the state of the contact sensor. Is the sensor configured correctly?");
+            return Err(());
+        }
     };
 
     // If this is Some(event) then it will be sent at the end of the loop and reset
