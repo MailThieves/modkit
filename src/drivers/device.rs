@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;
 use sqlx::Row;
@@ -11,6 +13,12 @@ pub enum DeviceType {
     Camera,
     Light,
     ContactSensor,
+}
+
+impl Display for DeviceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 impl<'r> sqlx::FromRow<'r, SqliteRow> for DeviceType {

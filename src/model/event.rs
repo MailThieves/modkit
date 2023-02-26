@@ -1,4 +1,6 @@
 //! An event passed through websockets
+use std::fmt::Display;
+
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, FromRow};
 use sqlx::sqlite::SqliteRow;
@@ -40,6 +42,13 @@ impl EventKind {
 
     pub fn is_incoming(&self) -> bool {
         !self.is_outgoing()
+    }
+}
+
+
+impl Display for EventKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
     }
 }
 
@@ -86,14 +95,14 @@ impl<'r> FromRow<'r, SqliteRow> for Event {
     fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
         let kind = EventKind::from_row(&row)?;
         let timestamp = row.try_get("timestamp")?;
-        let device = DeviceType::from_row(&row)?;
-        let data = Bundle::from_row(&row)?;
+        let device = DeviceType::from_row(&row).ok();
+        let data = Bundle::from_row(&row).ok();
 
         Ok(Event {
             kind,
             timestamp,
-            device: Some(device),
-            data: Some(data)
+            device,
+            data
         })
     }
 }

@@ -32,7 +32,7 @@ impl Bundle {
     // Bundles should be able to:
     //      1. go to json format for the web api
     //      2. Be written with a timestamp to a format on the local box
-    fn to_json(&self) -> std::result::Result<String, serde_json::Error> {
+    pub fn to_json(&self) -> std::result::Result<String, serde_json::Error> {
         serde_json::to_string_pretty(self)
     }
 
