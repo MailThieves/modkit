@@ -1,9 +1,11 @@
-use std::env;
+use std::{env, convert::TryFrom};
 
-use sqlx::SqlitePool;
+use sqlx::{SqlitePool, sqlite::SqliteRow, Sqlite};
 
 mod store_error;
-use store_error::StoreError;
+pub use store_error::StoreError;
+
+use crate::model::Event;
 
 // use crate::ws::event::Event;
 
@@ -31,23 +33,27 @@ impl Store {
         &self.0
     }
 
-    // pub async fn get_all_events(&self) -> Result<Vec<Event>, StoreError> {
-    //     let mut connection = self.0.acquire().await?;
+    pub async fn get_all_events(&self) -> Result<Vec<Event>, StoreError> {
+        let mut connection = self.0.acquire().await?;
 
-    //     // TODO: Implement To and From for SqliteRow -> Event
-    //     let events: Vec<Event> = sqlx::query("SELECT * FROM Events")
-    //         .map(|row: sqlx::sqlite::SqliteRow| {
-    //             Event::try_from(row).unwrap()
-    //         })
-    //         .fetch_all(&mut connection)
-    //         .await?;
+        let events: Vec<Event> = sqlx::query_as::<_, Event>("SELECT * FROM Events;").fetch_all(&mut connection).await?;
 
-    //     Ok(events)
-    // }
+        // TODO: Implement To and From for SqliteRow -> Event
+        // let events: Vec<Event> = sqlx::query("SELECT * FROM Events")
+        //     .map(|row: sqlx::sqlite::SqliteRow| {
+        //         Event::try_from(row).unwrap()
+        //     })
+        //     .fetch_all(&mut connection)
+        //     .await?;
+
+        Ok(events)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::{model::EventKind, drivers::device::DeviceType};
+
     use super::*;
 
     #[tokio::test]
@@ -56,10 +62,22 @@ mod tests {
         assert!(!store.borrow_pool().is_closed());
     }
 
-    // #[tokio::test]
-    // async fn test_get_all_events() {
-    //     let store = Store::connect().await.unwrap();
-    //     let events = store.get_all_events().await.unwrap();
-    //     assert!(events.len() > 0);
-    // }
+    #[tokio::test]
+    async fn test_get_all_events() {
+        let store = Store::connect().await.unwrap();
+        // INSERT INTO Events (kind, timestamp, device, data) VALUES ("DoorOpened", "2023-02-26 00:23:23.881440460 -06:00", "ContactSensor", "{""ContactSensor"":{""open"":true}}");
+        sqlx::query("DELETE FROM Events;").execute(store.borrow_pool()).await.unwrap();
+        sqlx::query(r#"INSERT INTO Events (kind, timestamp, device, data)
+            VALUES ("DoorOpened", "2023-02-26 00:23:23.881440460 -06:00", "ContactSensor", "{""ContactSensor"":{""open"":true}}");"#)
+            .execute(store.borrow_pool()).await.unwrap();
+
+        let events = store.get_all_events().await.unwrap();
+        assert!(events.len() > 0);
+        assert!(events.get(0).is_some());
+        let e = events.get(0).unwrap();
+        assert_eq!(e.kind(), &EventKind::DoorOpened);
+        assert!(e.timestamp().contains("2023-02-26"));
+        assert!(e.data().is_some());
+        assert_eq!(e.device_type().unwrap(), &DeviceType::ContactSensor);
+    }
 }

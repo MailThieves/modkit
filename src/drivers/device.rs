@@ -1,13 +1,34 @@
 use serde::{Deserialize, Serialize};
+use sqlx::sqlite::SqliteRow;
+use sqlx::Row;
 
 use crate::drivers::Result;
 use crate::model::Bundle;
+use crate::store::StoreError;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
 pub enum DeviceType {
     Camera,
     Light,
     ContactSensor,
+}
+
+impl<'r> sqlx::FromRow<'r, SqliteRow> for DeviceType {
+    fn from_row(row: &'r SqliteRow) -> std::result::Result<Self, sqlx::Error> {
+        let dev_type = match row.try_get("device")? {
+            "ContactSensor" => DeviceType::ContactSensor,
+            "Light" => DeviceType::Light,
+            "Camera" => DeviceType::Camera,
+            _ => {
+                return Err(
+                    StoreError::DecodeError("Couldn't decode device type".to_string())
+                        .into_sqlx_decode_error(),
+                )
+            }
+        };
+
+        Ok(dev_type)
+    }
 }
 
 /// A Device trait, which all devices should implement
@@ -32,7 +53,7 @@ mod tests {
         let bundle = Bundle::ContactSensor { open: true };
         match bundle {
             Bundle::ContactSensor { open: is_opened } => assert_eq!(is_opened, true),
-            _ => assert!(false)
+            _ => assert!(false),
         }
     }
 }

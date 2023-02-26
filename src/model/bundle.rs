@@ -1,7 +1,10 @@
 use std::fmt;
 
 use chrono::Utc;
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use sqlx::{sqlite::SqliteRow, Row};
+
+use crate::store::StoreError;
 
 // TODO: Maybe convert bundle to a Trait? we could have 3 separate implementations
 // although maybe that's a stupid idea. You wouldn't know at compile time which bundle you're working
@@ -37,6 +40,18 @@ impl Bundle {
         Self::Error {
             msg: String::from(msg),
         }
+    }
+}
+
+impl<'r> sqlx::FromRow<'r, SqliteRow> for Bundle {
+    fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
+        let json_data = row.try_get("data")?;
+        let bundle: Bundle = serde_json::from_str(json_data)
+            // This is a bit messy but it works for now
+            .map_err(|e|
+                StoreError::DecodeError(format!("{e}")).into_sqlx_decode_error()
+            )?;
+        Ok(bundle)
     }
 }
 
