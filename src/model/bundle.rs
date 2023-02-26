@@ -57,7 +57,7 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for Bundle {
 
 impl fmt::Display for Bundle {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}\t", Utc::now().format("%Y-%m-%d %H:%M:%S"))
+        write!(f, "{}\t", chrono::Local::now().to_string())
             .expect("Couldn't write output to buffer");
         match self {
             Self::ContactSensor { open } => {

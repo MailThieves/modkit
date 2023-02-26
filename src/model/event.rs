@@ -1,6 +1,7 @@
 //! An event passed through websockets
 use std::fmt::Display;
 
+use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, FromRow};
 use sqlx::sqlite::SqliteRow;
@@ -145,6 +146,14 @@ impl Event {
 
     pub fn to_msg(self) -> Message {
         Message::text(serde_json::to_string(&self).unwrap())
+    }
+
+    // Incoming events are never expected to have a timestamp.
+    // This will generate one. It's called after an Event is deserialized
+    // from a WS message
+    pub fn populate_timestamp(&mut self) {
+        // TODO: Extract this format string to a crate-wide const? It's used in bundle printing
+        self.timestamp = chrono::Local::now().to_string();
     }
 }
 

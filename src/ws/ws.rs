@@ -104,7 +104,7 @@ async fn handle_message(msg: Message) -> Event {
 
     info!("Got a message from the client: {:?}", msg);
 
-    let event: Event = match serde_json::from_str(&msg) {
+    let mut event: Event = match serde_json::from_str(&msg) {
         // If we can get an event from the message, do so
         Ok(event) => event,
         // Otherwise return an error event
@@ -113,6 +113,8 @@ async fn handle_message(msg: Message) -> Event {
             return Event::error(&format!("Bad message: {}", e));
         }
     };
+
+    event.populate_timestamp();
 
     // Filter out outgoing events; they shouldn't be allowed
     if event.kind().is_outgoing() {
