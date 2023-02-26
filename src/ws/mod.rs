@@ -4,6 +4,7 @@ use log::*;
 use warp::Filter;
 
 pub mod ws;
+pub use ws::send_to_clients;
 
 /// Starts up the webserver
 pub async fn run(ws_clients: &ws::Clients) {

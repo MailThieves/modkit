@@ -3,14 +3,16 @@ use std::time::Duration;
 
 use crate::drivers::contact_sensor::ContactSensor;
 use crate::drivers::device::{Device, DeviceType};
-use crate::model::*;
+use crate::store::Store;
+use crate::{model::*, ws};
 use crate::ws::ws::Clients;
 
 // 1. Watch for door opening
 // 2. Trigger the light
 // 3. Trigger the camera
 // 4. Send an event to the clients
-// 5. profit?
+// 5. write event in the db
+// 6. profit?
 //
 // The events that could be sent from this loop:
 // 1. MailDelivered (if determinable)
@@ -18,6 +20,7 @@ use crate::ws::ws::Clients;
 // 3. DoorOpened    (if undeterminable)
 pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> {
     info!("Running the watchdog");
+    let store = Store::connect().await?;
 
     // First, set up our door sensor
     let mut door_sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
@@ -44,20 +47,13 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
 
 
         // For all events in the queue, send them to all clients
-        for event in &event_queue {
-            let lock = clients.lock().await;
-            for (id, client) in lock.iter() {
-                info!("Sending to client {id}");
-                if let Some(sender) = &client.sender {
-                    sender
-                        .send(Ok(event.clone().to_msg()))
-                        .expect("Couldn't send message to client");
-                }
-            }
-            drop(lock);
+        // and also write it to the db
+        for event in event_queue {
+            ws::send_to_clients(&event, &clients).await;
+            store.write_event(event).await?;
         }
 
-        event_queue.clear();
+        event_queue = Vec::new();
         tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }

@@ -9,8 +9,9 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
 
 use crate::drivers::contact_sensor::ContactSensor;
-use crate::drivers::device::{DeviceType, Device};
+use crate::drivers::device::{Device, DeviceType};
 use crate::model::*;
+use crate::store::Store;
 
 pub(crate) type Clients = Arc<Mutex<HashMap<String, Client>>>;
 
@@ -18,6 +19,20 @@ pub(crate) type Clients = Arc<Mutex<HashMap<String, Client>>>;
 pub struct Client {
     pub client_id: String,
     pub sender: Option<mpsc::UnboundedSender<std::result::Result<Message, warp::Error>>>,
+}
+
+// Sends an event to every client in the clients list
+pub async fn send_to_clients(event: &Event, clients: &Clients) {
+    let lock = clients.lock().await;
+    for (id, client) in lock.iter() {
+        info!("Sending to client {id}");
+        if let Some(sender) = &client.sender {
+            sender
+                .send(Ok(event.clone().to_msg()))
+                .expect("Couldn't send message to client");
+        }
+    }
+    drop(lock);
 }
 
 /// Connects a websocket client
@@ -104,6 +119,19 @@ async fn handle_message(msg: Message) -> Event {
         return wrong_way();
     }
 
+    // Write it to the DB if possible, but prefer to just skip recording it
+    // rather than crash
+    if let Ok(store) = Store::connect().await {
+        store
+            .write_event(event.clone())
+            .await
+            .expect("Couldn't write event to the database");
+    } else {
+        error!(
+            "Couldn't connect to database when handling an incoming event. It was not recorded!"
+        );
+    }
+
     match event.kind() {
         EventKind::HealthCheck => return Event::new(EventKind::HealthCheck, None, None),
         EventKind::PollDevice => {
@@ -111,18 +139,26 @@ async fn handle_message(msg: Message) -> Event {
             if let Some(dev_type) = event.device_type() {
                 // If so, return a PollDeviceResult with the data bundle from that device
                 match poll_device(&dev_type) {
-                    Ok(bundle) => return Event::new(EventKind::PollDeviceResult, Some((*dev_type).clone()), Some(bundle)),
+                    Ok(bundle) => {
+                        return Event::new(
+                            EventKind::PollDeviceResult,
+                            Some((*dev_type).clone()),
+                            Some(bundle),
+                        )
+                    }
                     // If we encounter an error, return an error bundle
-                    Err(e) => return Event::error(&e)
+                    Err(e) => return Event::error(&e),
                 }
             } else {
                 // Otherwise return an error
-                return Event::error(r#"Please provide a device type to poll ("device": "Camera" for example)"#);
+                return Event::error(
+                    r#"Please provide a device type to poll ("device": "Camera" for example)"#,
+                );
             }
         }
         // We already filtered out outgoing events, so this must mean we added a new
         // type of incoming event and didn't write a handler for it
-        _ => panic!("Incoming event with no flight plan. This shouldn't happen.")
+        _ => panic!("Incoming event with no flight plan. This shouldn't happen."),
     }
 }
 
@@ -137,16 +173,18 @@ fn poll_device(dev_type: &DeviceType) -> Result<Bundle, String> {
         DeviceType::ContactSensor => {
             let sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
             sensor.poll()
-        },
+        }
         DeviceType::Camera => {
             // get camera stuff here
-            Ok(Bundle::Camera { placeholder: format!("Placeholder data") })
-        },
+            Ok(Bundle::Camera {
+                placeholder: format!("Placeholder data"),
+            })
+        }
         DeviceType::Light => {
             // Get light state
             Ok(Bundle::Light { on: true })
-        },
+        }
     };
 
-    bundle.map_err(|e| format!("{}", e) )
+    bundle.map_err(|e| format!("{}", e))
 }
