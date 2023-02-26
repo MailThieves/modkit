@@ -1,7 +1,6 @@
 //! An event passed through websockets
 use std::fmt::Display;
 
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, FromRow};
 use sqlx::sqlite::SqliteRow;

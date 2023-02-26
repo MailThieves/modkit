@@ -1,6 +1,5 @@
 use std::fmt;
 
-use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use sqlx::{sqlite::SqliteRow, Row};
 
