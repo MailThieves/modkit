@@ -32,7 +32,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         match arg1.as_str() {
             "watchdog" => {
                 info!("You provided the argument `watchdog`, I'll only run the watchdog client");
-                watchdog::watch(&ws_clients).await;
+                watchdog::watch(&ws_clients).await?;
             }
             "ws" => {
                 info!("You provided the argument `ws`, I'll only run the WebSocket server");
@@ -47,7 +47,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     tokio::join!(
         ws::run(&ws_clients),
         watchdog::watch(&ws_clients)
-    );
+    ).1?;
 
     Ok(())
 }

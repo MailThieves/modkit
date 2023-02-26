@@ -16,7 +16,7 @@ use crate::ws::ws::Clients;
 // 1. MailDelivered (if determinable)
 // 2. MailPickedUp  (if determinable)
 // 3. DoorOpened    (if undeterminable)
-pub async fn watch(clients: &Clients) -> Result<(), ()> {
+pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> {
     info!("Running the watchdog");
 
     // First, set up our door sensor

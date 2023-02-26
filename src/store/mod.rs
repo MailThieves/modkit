@@ -1,36 +1,33 @@
-use std::{convert::TryFrom, env};
+use std::env;
 
-use sqlx::{sqlite::SqliteRow, Sqlite, SqlitePool};
+use sqlx::SqlitePool;
 
 mod store_error;
 pub use store_error::StoreError;
 
 use crate::model::Event;
 
-// use crate::ws::event::Event;
-
-// impl<'r> FromRow<'r, SqliteRow> for Event {
-//     fn from_row(row: &'r SqliteRow) -> Result<Self, sqlx::Error> {
-//         let kind = row.try_get::<String, &str>("kind")?;
-//         let timestamp = row.try_get::<String, &str>("timestamp")?;
-//         let device = row.try_get::<String, &str>("device")?;
-//         let bundle = row.try_get::<String, &str>("bundle")?;
-//     }
-// }
-
 pub struct Store(SqlitePool);
 
 impl Store {
+    /// Connects to a Sqlite database. You must set the `DATABASE_URL` environment variable.
+    /// 
+    /// Example:
+    /// ```
+    /// $ export DATABASE_URL=sqlite:my_db_file.db
+    /// ```
     pub async fn connect() -> Result<Self, StoreError> {
         let db_location = env::var("DATABASE_URL")?;
         let pool = SqlitePool::connect(&db_location).await?;
         Ok(Store(pool))
     }
 
+    /// Borrows the connection pool
     pub fn borrow_pool(&self) -> &SqlitePool {
         &self.0
     }
 
+    /// Gets all events from the DB and returns them as a vector
     pub async fn get_all_events(&self) -> Result<Vec<Event>, StoreError> {
         let mut connection = self.0.acquire().await?;
         let events: Vec<Event> = sqlx::query_as::<_, Event>("SELECT * FROM Events;")
@@ -39,6 +36,7 @@ impl Store {
         Ok(events)
     }
 
+    /// Write a single event to the db
     pub async fn write_event(&self, event: Event) -> Result<(), StoreError> {
         let mut connection = self.0.acquire().await?;
         let event_kind = format!("{}", event.kind());
@@ -85,7 +83,7 @@ mod tests {
     #[tokio::test]
     async fn test_db_connection() {
         clear_db().await;
-        
+
         let store = Store::connect().await.expect("Couldn't connect to Store");
         assert!(!store.borrow_pool().is_closed());
     }
