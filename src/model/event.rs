@@ -2,7 +2,8 @@
 use serde::{Serialize, Deserialize};
 use warp::ws::Message;
 
-use crate::drivers::device::{Bundle, DeviceType};
+use crate::drivers::device::DeviceType;
+use crate::model::Bundle;
 
 /// The kind of event being sent
 #[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]

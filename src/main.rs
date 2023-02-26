@@ -11,6 +11,7 @@ mod drivers;
 mod ws;
 mod watchdog;
 mod store;
+mod model;
 
 fn init_logging() {
     env_logger::Builder::new()

@@ -2,8 +2,8 @@ use log::*;
 use std::time::Duration;
 
 use crate::drivers::contact_sensor::ContactSensor;
-use crate::drivers::device::{Bundle, Device, DeviceType};
-use crate::ws::event::{Event, EventKind};
+use crate::drivers::device::{Device, DeviceType};
+use crate::model::*;
 use crate::ws::ws::Clients;
 
 // 1. Watch for door opening

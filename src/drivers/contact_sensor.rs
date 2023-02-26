@@ -4,7 +4,8 @@ use std::io::Read;
 use log::*;
 
 use crate::drivers::Result;
-use crate::drivers::device::{Device, Bundle};
+use crate::drivers::device::Device;
+use crate::model::Bundle;
 
 #[derive(Debug)]
 pub struct ContactSensor {
@@ -62,7 +63,7 @@ impl Device for ContactSensor {
     }
 
     /// Returns a Bundle of data, in this case just { open: bool }, wrapped in a result
-    fn poll(&self) -> Result<super::device::Bundle> {
+    fn poll(&self) -> Result<Bundle> {
         // This is temporary, I'm using the contents of a file to simulate the switch
         // since I don't have a physical switch yet
         trace!("Trying to read a 1 or 0 from ./sensor.txt (temporary placeholder until we get the hardware)");

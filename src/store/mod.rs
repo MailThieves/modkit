@@ -1,11 +1,11 @@
-use std::{env, convert::TryFrom};
+use std::env;
 
-use sqlx::{SqlitePool, sqlite::SqliteRow, Row, FromRow};
+use sqlx::SqlitePool;
 
 mod store_error;
 use store_error::StoreError;
 
-use crate::ws::event::Event;
+// use crate::ws::event::Event;
 
 
 // impl<'r> FromRow<'r, SqliteRow> for Event {
@@ -31,43 +31,20 @@ impl Store {
         &self.0
     }
 
-    pub async fn get_all_events(&self) -> Result<Vec<Event>, StoreError> {
-        let mut connection = self.0.acquire().await?;
+    // pub async fn get_all_events(&self) -> Result<Vec<Event>, StoreError> {
+    //     let mut connection = self.0.acquire().await?;
 
-        // TODO: Implement To and From for SqliteRow -> Event
-        let events: Vec<Event> = sqlx::query("SELECT * FROM Events")
-            .map(|row: sqlx::sqlite::SqliteRow| {
-                Event::try_from(row).unwrap()
-            })
-            .fetch_all(&mut connection)
-            .await?;
+    //     // TODO: Implement To and From for SqliteRow -> Event
+    //     let events: Vec<Event> = sqlx::query("SELECT * FROM Events")
+    //         .map(|row: sqlx::sqlite::SqliteRow| {
+    //             Event::try_from(row).unwrap()
+    //         })
+    //         .fetch_all(&mut connection)
+    //         .await?;
 
-        Ok(events)
-    }
+    //     Ok(events)
+    // }
 }
-
-// pub async fn test_db_interaction() -> Result<(), Box<dyn Error>> {
-//     println!("{:#?}", env::var("SOME_OLD_VAR"));
-//     Ok(())
-//     let pool = SqlitePool::connect(&env::var("DATABASE_URL")?).await?;
-
-//     // let mut conn = pool.acquire().await?;
-
-//     // // let id = sqlx::query!(
-//     // //     r#"INSERT INTO Events ( kind, timestamp, device, data ) VALUES ( "DoorOpened", "right now", "ContactSensor", "true")"#
-//     // // ).execute(&mut conn)
-//     // // .await?
-//     // // .last_insert_rowid();
-
-//     // let result = sqlx::query!(
-//     //     r#"SELECT * FROM Events"#
-//     // ).fetch_all(&mut conn)
-//     // .await?;
-
-//     // println!("{:#?}", result);
-
-//     // Ok(())
-// }
 
 #[cfg(test)]
 mod tests {
@@ -79,10 +56,10 @@ mod tests {
         assert!(!store.borrow_pool().is_closed());
     }
 
-    #[tokio::test]
-    async fn test_get_all_events() {
-        let store = Store::connect().await.unwrap();
-        let events = store.get_all_events().await.unwrap();
-        assert!(events.len() > 0);
-    }
+    // #[tokio::test]
+    // async fn test_get_all_events() {
+    //     let store = Store::connect().await.unwrap();
+    //     let events = store.get_all_events().await.unwrap();
+    //     assert!(events.len() > 0);
+    // }
 }

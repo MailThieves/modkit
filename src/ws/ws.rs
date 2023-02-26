@@ -1,3 +1,4 @@
+/// The operating logic for the WebSocket, ie. this is what the WebSocket can do
 use std::collections::HashMap;
 use std::sync::Arc;
 
@@ -8,8 +9,8 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 use warp::ws::{Message, WebSocket};
 
 use crate::drivers::contact_sensor::ContactSensor;
-use crate::drivers::device::{Bundle, DeviceType, Device};
-use crate::ws::event::{Event, EventKind};
+use crate::drivers::device::{DeviceType, Device};
+use crate::model::*;
 
 pub(crate) type Clients = Arc<Mutex<HashMap<String, Client>>>;
 
