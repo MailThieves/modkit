@@ -39,12 +39,18 @@ impl Store {
     /// Write a single event to the db
     pub async fn write_event(&self, event: Event) -> Result<(), StoreError> {
         let mut connection = self.0.acquire().await?;
+
+        // Serialize the event details into strings
+        // Event Kind
         let event_kind = format!("{}", event.kind());
+        // Event timestamp
         let timestamp = event.timestamp();
+        // Event device (if any)
         let device = match event.device_type() {
             Some(d) => format!("{d}"),
             None => format!("None"),
         };
+        // Event data (if any)
         let data = match event.data() {
             Some(d) => {
                 let unescaped = d.to_json().unwrap();
@@ -52,6 +58,8 @@ impl Store {
             }
             None => format!("None"),
         };
+
+        // Insert into table
         sqlx::query!(
             "INSERT INTO Events (kind, timestamp, device, data) VALUES (?, ?, ?, ?);",
             event_kind,
