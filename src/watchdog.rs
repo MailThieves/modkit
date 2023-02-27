@@ -1,11 +1,12 @@
-use log::*;
 use std::time::Duration;
+
+use log::*;
 
 use crate::drivers::contact_sensor::ContactSensor;
 use crate::drivers::device::{Device, DeviceType};
+use crate::server::Clients;
 use crate::store::Store;
-use crate::{model::*, ws};
-use crate::ws::ws::Clients;
+use crate::{model::*, server};
 
 // 1. Watch for door opening
 // 2. Trigger the light
@@ -15,9 +16,9 @@ use crate::ws::ws::Clients;
 // 6. profit?
 //
 // The events that could be sent from this loop:
-// 1. MailDelivered (if determinable)
-// 2. MailPickedUp  (if determinable)
-// 3. DoorOpened    (if undeterminable)
+// 1. MailDelivered
+// 2. MailPickedUp
+// 3. DoorOpened
 pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> {
     info!("Running the watchdog");
     let store = Store::connect().await?;
@@ -28,7 +29,6 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
     let mut event_queue: Vec<Event> = Vec::new();
 
     loop {
-
         // if the door sensor changes
         if door_sensor.changed().unwrap_or(false) {
             // Call the on_activate() function
@@ -45,11 +45,10 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
             // Here we should also determine if mail is delivered or not. This will require the camera.
         }
 
-
         // For all events in the queue, send them to all clients
         // and also write it to the db
         for event in event_queue {
-            ws::send_to_clients(&event, &clients).await;
+            server::ws::send_to_clients(&event, &clients).await;
             store.write_event(event).await?;
         }
 
