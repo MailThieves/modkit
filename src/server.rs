@@ -13,8 +13,6 @@ use warp::ws::{Message, WebSocket};
 use warp::Filter;
 use warp::{hyper::StatusCode, reply::json, Rejection, Reply};
 
-use crate::drivers::contact_sensor::ContactSensor;
-use crate::drivers::device::{Device, DeviceType};
 use crate::model::*;
 use crate::store::Store;
 
@@ -52,8 +50,9 @@ pub mod ws {
     /// handles an incoming Event through the websocket
     /// and returns a response Event
     pub async fn handle_message(msg: Message) -> Event {
+
+        // Capture the msg if we can get one
         let msg = match msg.to_str() {
-            // Capture the msg if we can get one
             Ok(m) => m,
             // Otherwise, return a message containing the error
             Err(e) => {
@@ -68,6 +67,7 @@ pub mod ws {
 
         info!("Got a message from the client: {:?}", msg);
 
+        // Parse a Message to an Event
         let mut event: Event = match serde_json::from_str(&msg) {
             // If we can get an event from the message, do so
             Ok(event) => event,
@@ -78,12 +78,14 @@ pub mod ws {
             }
         };
 
-        event.populate_timestamp();
-
         // Filter out outgoing events; they shouldn't be allowed
         if event.kind().is_outgoing() {
             return wrong_way();
         }
+
+        // Populate a timestamp so that incoming events have one when saving
+        // to the database
+        event.populate_timestamp();
 
         // Write it to the DB if possible, but prefer to just skip recording it
         // rather than crash
@@ -98,33 +100,18 @@ pub mod ws {
             );
         }
 
+        // TODO: Make a handler function for each kind of event kind
         match event.kind() {
-            EventKind::HealthCheck => return Event::new(EventKind::HealthCheck, None, None),
-            EventKind::PollDevice => {
-                // If they send a PollDevice event, make sure they provided a DeviceType
-                if let Some(dev_type) = event.device_type() {
-                    // If so, return a PollDeviceResult with the data bundle from that device
-                    match poll_device(&dev_type) {
-                        Ok(bundle) => {
-                            return Event::new(
-                                EventKind::PollDeviceResult,
-                                Some((*dev_type).clone()),
-                                Some(bundle),
-                            )
-                        }
-                        // If we encounter an error, return an error bundle
-                        Err(e) => return Event::error(&e),
-                    }
-                } else {
-                    // Otherwise return an error
-                    return Event::error(
-                        r#"Please provide a device type to poll ("device": "Camera" for example)"#,
-                    );
-                }
-            }
+            EventKind::HealthCheck => handle_health_check(&event),
+            EventKind::PollDevice => handle_poll_device(&event),
             // We already filtered out outgoing events, so this must mean we added a new
             // type of incoming event and didn't write a handler for it
-            _ => panic!("Incoming event with no flight plan. This shouldn't happen."),
+            _ => {
+                error!("Need an event handler for an incoming event that we didn't plan for");
+                error!("Either an outgoing event slipped through the cracks or we don't have a plan");
+                error!("Event Kind: {}", event.kind());
+                Event::error("Unplanned incoming event or rogue outgoing event, this shouldn't happen!")
+            }
         }
     }
 
@@ -134,25 +121,32 @@ pub mod ws {
         ))
     }
 
-    fn poll_device(dev_type: &DeviceType) -> Result<Bundle, String> {
-        let bundle = match dev_type {
-            DeviceType::ContactSensor => {
-                let sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
-                sensor.poll()
-            }
-            DeviceType::Camera => {
-                // get camera stuff here
-                Ok(Bundle::Camera {
-                    placeholder: format!("Placeholder data"),
-                })
-            }
-            DeviceType::Light => {
-                // Get light state
-                Ok(Bundle::Light { on: true })
-            }
+    /// When we receive a health check, just send it back.
+    /// This just lets the client know that it's still connected ok!
+    fn handle_health_check(_: &Event) -> Event {
+        Event::new(EventKind::HealthCheck, None, None)
+    }
+
+    fn handle_poll_device(event: &Event) -> Event {
+        // If they didn't provide a device type, return with an error
+        let dev_type = match event.device_type() {
+            Some(d) => d,
+            None => return Event::error("Please provide a device type to poll (`Camera`, `Light`, `ContactSensor`)")
         };
 
-        bundle.map_err(|e| format!("{}", e))
+        // Otherwise, poll the device and return the data bundle
+        match event.poll_device() {
+            Ok(bundle) => {
+                Event::new(
+                    EventKind::PollDeviceResult,
+                    Some((*dev_type).clone()),
+                    Some(bundle),
+                )
+            },
+            // If we get a device error, then just return that error
+            // wrapped in an event
+            Err(e) => e.into()
+        }
     }
 }
 
@@ -185,7 +179,7 @@ pub mod http {
             .and(warp::ws())
             .and(warp::path::param())
             .and(with_clients(ws_clients.clone()))
-            .and_then(ws_handler);
+            .and_then(connect_client);
 
         let routes = register_routes
             .or(ws_routes)
@@ -224,7 +218,7 @@ pub mod http {
     }
 
     /// Connects a websocket client
-    pub async fn client_connection(
+    pub async fn spawn_client_connection(
         ws: WebSocket,
         id: String,
         clients: Clients,
@@ -285,14 +279,14 @@ pub mod http {
     }
 
     // Attempt to find a client from the list, and if so connect a websocket
-    pub async fn ws_handler(
+    pub async fn connect_client(
         ws: warp::ws::Ws,
         id: String,
         clients: Clients,
     ) -> Result<impl Reply, Rejection> {
         let client = clients.lock().await.get(&id).cloned();
         match client {
-            Some(c) => Ok(ws.on_upgrade(move |socket| client_connection(socket, id, clients, c))),
+            Some(c) => Ok(ws.on_upgrade(move |socket| spawn_client_connection(socket, id, clients, c))),
             None => Err(warp::reject::not_found()),
         }
     }

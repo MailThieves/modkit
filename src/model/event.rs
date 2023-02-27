@@ -2,11 +2,13 @@
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
-use sqlx::{Row, FromRow};
 use sqlx::sqlite::SqliteRow;
+use sqlx::{FromRow, Row};
 use warp::ws::Message;
 
-use crate::drivers::device::DeviceType;
+use crate::drivers::DeviceError;
+use crate::drivers::contact_sensor::ContactSensor;
+use crate::drivers::device::{DeviceType, Device};
 use crate::model::Bundle;
 use crate::store::StoreError;
 
@@ -45,7 +47,6 @@ impl EventKind {
     }
 }
 
-
 impl Display for EventKind {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}", self)
@@ -74,7 +75,6 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for EventKind {
     }
 }
 
-
 /// An Event struct, that can be sent to or recieved from a websocket client
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Event {
@@ -102,7 +102,7 @@ impl<'r> FromRow<'r, SqliteRow> for Event {
             kind,
             timestamp,
             device,
-            data
+            data,
         })
     }
 }
@@ -153,6 +153,36 @@ impl Event {
     pub fn populate_timestamp(&mut self) {
         // TODO: Extract this format string to a crate-wide const? It's used in bundle printing
         self.timestamp = chrono::Local::now().to_string();
+    }
+
+    // Finds the device type associated with this event, and poll that device,
+    // returning a data bundle
+    pub fn poll_device(&self) -> Result<Bundle, DeviceError> {
+        // Returning a String error is kind of ugly here but it's fine for now
+        if self.device.is_none() {
+            return Err(
+                DeviceError::DeviceNotFound(self.device.clone())
+            );
+        }
+
+        let bundle = match self.device.as_ref().unwrap() {
+            DeviceType::ContactSensor => {
+                let sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
+                sensor.poll()
+            }
+            DeviceType::Camera => {
+                // get camera stuff here
+                Ok(Bundle::Camera {
+                    placeholder: format!("Placeholder data"),
+                })
+            }
+            DeviceType::Light => {
+                // Get light state
+                Ok(Bundle::Light { on: true })
+            }
+        };
+
+        bundle
     }
 }
 
