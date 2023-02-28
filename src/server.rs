@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use futures::{FutureExt, StreamExt};
 use log::*;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use tokio::sync::{mpsc, Mutex};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use uuid::Uuid;
@@ -50,7 +50,6 @@ pub mod ws {
     /// handles an incoming Event through the websocket
     /// and returns a response Event
     pub async fn handle_message(msg: Message) -> Event {
-
         // Capture the msg if we can get one
         let msg = match msg.to_str() {
             Ok(m) => m,
@@ -108,9 +107,13 @@ pub mod ws {
             // type of incoming event and didn't write a handler for it
             _ => {
                 error!("Need an event handler for an incoming event that we didn't plan for");
-                error!("Either an outgoing event slipped through the cracks or we don't have a plan");
+                error!(
+                    "Either an outgoing event slipped through the cracks or we don't have a plan"
+                );
                 error!("Event Kind: {}", event.kind());
-                Event::error("Unplanned incoming event or rogue outgoing event, this shouldn't happen!")
+                Event::error(
+                    "Unplanned incoming event or rogue outgoing event, this shouldn't happen!",
+                )
             }
         }
     }
@@ -131,21 +134,23 @@ pub mod ws {
         // If they didn't provide a device type, return with an error
         let dev_type = match event.device_type() {
             Some(d) => d,
-            None => return Event::error("Please provide a device type to poll (`Camera`, `Light`, `ContactSensor`)")
+            None => {
+                return Event::error(
+                    "Please provide a device type to poll (`Camera`, `Light`, `ContactSensor`)",
+                )
+            }
         };
 
         // Otherwise, poll the device and return the data bundle
         match event.poll_device() {
-            Ok(bundle) => {
-                Event::new(
-                    EventKind::PollDeviceResult,
-                    Some((*dev_type).clone()),
-                    Some(bundle),
-                )
-            },
+            Ok(bundle) => Event::new(
+                EventKind::PollDeviceResult,
+                Some((*dev_type).clone()),
+                Some(bundle),
+            ),
             // If we get a device error, then just return that error
             // wrapped in an event
-            Err(e) => e.into()
+            Err(e) => e.into(),
         }
     }
 }
@@ -155,15 +160,20 @@ pub mod ws {
 pub mod http {
     use super::*;
 
-    #[derive(Debug, Serialize)]
-    struct RegisterResponse {
+    #[derive(Debug, Serialize, Deserialize)]
+    pub(crate) struct RegisterResponse {
         url: String,
     }
 
-    /// Starts up the webserver
-    pub async fn run(ws_clients: &Clients) {
-        info!("Running the WebSocket server");
+    impl RegisterResponse {
+        pub(crate) fn url(&self) -> &str {
+            &self.url
+        }
+    }
 
+    pub fn register_route(
+        ws_clients: &Clients,
+    ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
         let register = warp::path("register");
         let register_routes = register
             .and(warp::get())
@@ -174,15 +184,25 @@ pub mod http {
                 .and(warp::path::param())
                 .and(with_clients(ws_clients.clone()))
                 .and_then(unregister_handler));
+        register_routes
+    }
 
-        let ws_routes = warp::path("ws")
+    pub fn ws_route(
+        ws_clients: &Clients,
+    ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
+        warp::path("ws")
             .and(warp::ws())
             .and(warp::path::param())
             .and(with_clients(ws_clients.clone()))
-            .and_then(connect_client);
+            .and_then(connect_client)
+    }
 
-        let routes = register_routes
-            .or(ws_routes)
+    /// Starts up the webserver
+    pub async fn run(ws_clients: &Clients) {
+        info!("Running the WebSocket server");
+
+        let routes = register_route(&ws_clients)
+            .or(ws_route(&ws_clients))
             .with(warp::cors().allow_any_origin());
 
         warp::serve(routes).run(([127, 0, 0, 1], 3012)).await
@@ -286,8 +306,47 @@ pub mod http {
     ) -> Result<impl Reply, Rejection> {
         let client = clients.lock().await.get(&id).cloned();
         match client {
-            Some(c) => Ok(ws.on_upgrade(move |socket| spawn_client_connection(socket, id, clients, c))),
+            Some(c) => {
+                Ok(ws.on_upgrade(move |socket| spawn_client_connection(socket, id, clients, c)))
+            }
             None => Err(warp::reject::not_found()),
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn clients() -> Clients {
+        return Arc::new(Mutex::new(HashMap::new()));
+    }
+
+    async fn register_ws_url() -> http::RegisterResponse {
+        let filter = http::register_route(&clients());
+        let response = warp::test::request().path("/register").reply(&filter).await;
+
+        // Make sure the response is ok
+        assert_eq!(response.status(), 200);
+        // Get the response body as a string
+        let body = std::str::from_utf8(response.body()).unwrap();
+        serde_json::from_str(&body).unwrap()
+    }
+
+    #[tokio::test]
+    async fn test_register_route() {
+        let filter = http::register_route(&clients());
+
+        let response = warp::test::request().path("/register").reply(&filter).await;
+
+        // Make sure the response is ok
+        assert_eq!(response.status(), 200);
+        // Get the response body as a string
+        let body = std::str::from_utf8(response.body()).unwrap();
+        // Make sure the websocket url is in it
+        assert!(body.contains("ws://") || body.contains("wss://"));
+    }
+
+    // I tried to write a test for the websocket but goddamn it's complicated
+    // Or i'm just a dumbass
 }
