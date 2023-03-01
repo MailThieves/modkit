@@ -173,6 +173,8 @@ pub mod ws {
 /// Methods for starting the webserver, and handling registration
 /// and connection to the websocket
 pub mod http {
+    use warp::{hyper::HeaderMap, http::HeaderValue};
+
     use super::*;
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -216,11 +218,19 @@ pub mod http {
     pub async fn run(ws_clients: &Clients) {
         info!("Running the WebSocket server");
 
+        let mut headers = HeaderMap::new();
+        headers.insert("default-src", HeaderValue::from_static("*"));
+
         let routes = register_route(&ws_clients)
             .or(ws_route(&ws_clients))
-            .with(warp::cors().allow_any_origin());
+            .with(warp::cors().allow_any_origin())
+            .with(warp::reply::with::headers(headers));
 
-        warp::serve(routes).run(([127, 0, 0, 1], 3012)).await
+        warp::serve(routes)
+            .tls()
+            .cert_path("cert.pem")
+            .key_path("key.rsa")
+            .run(([127, 0, 0, 1], 3012)).await
     }
 
     // Attaches Clients to a warp route
