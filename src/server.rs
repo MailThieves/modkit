@@ -128,6 +128,8 @@ pub mod ws {
         ))
     }
 
+    // TODO: Add tests for all the handlers
+
     /// When we receive a health check, just send it back.
     /// This just lets the client know that it's still connected ok!
     fn handle_health_check(_: &Event) -> Event {
