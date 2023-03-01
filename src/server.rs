@@ -103,7 +103,6 @@ pub mod ws {
             }
         }
 
-        // TODO: Make a handler function for each kind of event kind
         match event.kind() {
             EventKind::HealthCheck => handle_health_check(&event),
             EventKind::PollDevice => handle_poll_device(&event),
