@@ -24,6 +24,17 @@ fn init_logging() {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
 
+    // Try to connect to the DB so we get a nice error message at boot when it fails
+    match store::Store::connect().await {
+        Ok(_) => info!("DB connected successfully"),
+        Err(e) => {
+            error!("Database couldn't be reached");
+            error!("{e}");
+            error!("use `export DATABASE_URL=sqlite:my_db_file.db` to set the environment variable");
+            error!("No DB connection, so I'll run anyway without recording anything.");
+        }
+    }
+
     let args: Vec<String> = std::env::args().collect();
 
     let ws_clients: server::Clients = Arc::new(Mutex::new(HashMap::new()));
