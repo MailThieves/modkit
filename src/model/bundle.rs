@@ -5,6 +5,8 @@ use sqlx::{sqlite::SqliteRow, Row};
 
 use crate::store::StoreError;
 
+use super::Event;
+
 // TODO: Maybe convert bundle to a Trait? we could have 3 separate implementations
 // although maybe that's a stupid idea. You wouldn't know at compile time which bundle you're working
 // with.
@@ -25,6 +27,9 @@ pub enum Bundle {
     Light {
         on: bool,
     },
+    EventHistory {
+        events: Vec<Event>
+    }
 }
 
 impl Bundle {
@@ -60,11 +65,18 @@ impl fmt::Display for Bundle {
             .expect("Couldn't write output to buffer");
         match self {
             Self::ContactSensor { open } => {
-                return writeln!(f, "ContactSensor({})", open);
+                return write!(f, "ContactSensor({})", open);
             }
-            Self::Camera { placeholder } => return writeln!(f, "Camera({placeholder})"),
-            Self::Light { on } => return writeln!(f, "Light(on: {on})"),
-            Self::Error { msg } => return writeln!(f, "Error({msg})"),
+            Self::Camera { placeholder } => return write!(f, "Camera({placeholder})"),
+            Self::Light { on } => return write!(f, "Light(on: {on})"),
+            Self::Error { msg } => return write!(f, "Error({msg})"),
+            Self::EventHistory { events } => {
+                // This is a little bit fucked but oh well
+                for e in events {
+                    write!(f, "{:?}", e).unwrap();
+                }
+                write!(f, "")
+            }
         }
     }
 }

@@ -106,6 +106,7 @@ pub mod ws {
         match event.kind() {
             EventKind::HealthCheck => handle_health_check(&event),
             EventKind::PollDevice => handle_poll_device(&event),
+            EventKind::EventHistory => handle_event_history().await,
             // We already filtered out outgoing events, so this must mean we added a new
             // type of incoming event and didn't write a handler for it
             _ => {
@@ -155,6 +156,17 @@ pub mod ws {
             // wrapped in an event
             Err(e) => e.into(),
         }
+    }
+
+    async fn handle_event_history() -> Event {
+        let db = Store::connect().await.expect("Couldn't access the database!");
+        let events = db.get_all_events().await.expect("Couldn't get events from the db");
+
+        Event::new(
+            EventKind::EventHistory,
+            None,
+            Some(Bundle::EventHistory { events: events })
+        )
     }
 }
 

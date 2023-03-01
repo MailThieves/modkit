@@ -3,7 +3,7 @@ use log::*;
 
 use sqlx::SqlitePool;
 
-use crate::model::Event;
+use crate::model::{Event, EventKind};
 
 #[derive(thiserror::Error, Debug)]
 pub enum StoreError {
@@ -62,6 +62,13 @@ impl Store {
 
     /// Write a single event to the db
     pub async fn write_event(&self, event: Event) -> Result<(), StoreError> {
+        // We want to silently skip writing the EventHistory event because all it does is return
+        // a list of previous events. We could get a nasty loop of recursive event-writing
+        // to the db. Bad news.
+        if event.kind() == &EventKind::EventHistory {
+            return Ok(());
+        }
+
         let mut connection = self.0.acquire().await?;
 
         // Serialize the event details into strings

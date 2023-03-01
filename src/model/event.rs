@@ -6,9 +6,9 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{FromRow, Row};
 use warp::ws::Message;
 
-use crate::drivers::DeviceError;
 use crate::drivers::contact_sensor::ContactSensor;
-use crate::drivers::device::{DeviceType, Device};
+use crate::drivers::device::{Device, DeviceType};
+use crate::drivers::DeviceError;
 use crate::model::Bundle;
 use crate::store::StoreError;
 
@@ -18,6 +18,7 @@ pub enum EventKind {
     // Incoming events
     HealthCheck,
     PollDevice,
+    EventHistory,
     // Outgoing events
     MailDelivered,
     MailPickedUp,
@@ -29,16 +30,18 @@ pub enum EventKind {
 impl EventKind {
     pub fn is_outgoing(&self) -> bool {
         match self {
+            // Incoming events
+            Self::HealthCheck => false,
+            Self::PollDevice => false,
+            Self::EventHistory => false,
             // Outgoing events
             Self::MailDelivered => true,
             Self::MailPickedUp => true,
             Self::DoorOpened => true,
             Self::PollDeviceResult => true,
             Self::Error => true,
-            // Incoming events
-            Self::HealthCheck => false,
-            Self::PollDevice => false, // note that i'm not using _ as a catch all; don't want to accidentally miss a
-                                       // new event type that may be outgoing
+            // note that i'm not using _ as a catch all; don't want to accidentally miss a
+            // new event type that may be outgoing
         }
     }
 
@@ -58,6 +61,7 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for EventKind {
         let kind = match row.try_get("kind")? {
             "HealthCheck" => EventKind::HealthCheck,
             "PollDevice" => EventKind::PollDevice,
+            "EventHistory" => EventKind::EventHistory,
             "MailDelivered" => EventKind::MailDelivered,
             "MailPickedUp" => EventKind::MailPickedUp,
             "DoorOpened" => EventKind::DoorOpened,
@@ -76,7 +80,7 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for EventKind {
 }
 
 /// An Event struct, that can be sent to or recieved from a websocket client
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct Event {
     /// The event type
     kind: EventKind,
@@ -160,9 +164,7 @@ impl Event {
     pub fn poll_device(&self) -> Result<Bundle, DeviceError> {
         // Returning a String error is kind of ugly here but it's fine for now
         if self.device.is_none() {
-            return Err(
-                DeviceError::DeviceNotFound(self.device.clone())
-            );
+            return Err(DeviceError::DeviceNotFound(self.device.clone()));
         }
 
         let bundle = match self.device.as_ref().unwrap() {
