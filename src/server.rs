@@ -88,15 +88,19 @@ pub mod ws {
 
         // Write it to the DB if possible, but prefer to just skip recording it
         // rather than crash
-        if let Ok(store) = Store::connect().await {
-            store
-                .write_event(event.clone())
-                .await
-                .expect("Couldn't write event to the database");
-        } else {
-            error!(
-                "Couldn't connect to database when handling an incoming event. It was not recorded!"
-            );
+        match Store::connect().await {
+            Ok(store) => {
+                store
+                    .write_event(event.clone())
+                    .await
+                    .expect("Couldn't write event to the database");
+            }
+            Err(e) => {
+                error!(
+                    "Couldn't connect to database when handling an incoming event. It was not recorded!"
+                );
+                error!("{e}");
+            }
         }
 
         // TODO: Make a handler function for each kind of event kind
