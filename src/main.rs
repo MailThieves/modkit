@@ -30,7 +30,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         Err(e) => {
             error!("Database couldn't be reached");
             error!("{e}");
-            error!("use `export DATABASE_URL=sqlite:my_db_file.db` to set the environment variable");
+            error!("use `export DATABASE_URL=sqlite:my_db_file.db` to set the environment variable, and make sure the file exists");
+            info!("Note that when running in release mode, this program will always use `sqlite:modkit.db` as the DB URL");
             error!("No DB connection, so I'll run anyway without recording anything.");
         }
     }

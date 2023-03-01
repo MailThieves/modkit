@@ -1,4 +1,5 @@
 use std::env;
+use log::*;
 
 use sqlx::SqlitePool;
 
@@ -33,7 +34,14 @@ impl Store {
     /// $ export DATABASE_URL=sqlite:my_db_file.db
     /// ```
     pub async fn connect() -> Result<Self, StoreError> {
-        let db_location = env::var("DATABASE_URL")?;
+        let db_location;
+        #[cfg(debug_assertions)] {
+            db_location = env::var("DATABASE_URL")?;
+        }
+        #[cfg(not(debug_assertions))] {
+            db_location = String::from("sqlite:modkit.db");
+        }
+        info!("Using {db_location} as database location");
         let pool = SqlitePool::connect(&db_location).await?;
         Ok(Store(pool))
     }
