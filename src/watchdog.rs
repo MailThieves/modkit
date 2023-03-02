@@ -43,29 +43,17 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                 Some(bundle),
             ));
 
-            // Temporary, if the door is closed then randomly generate MailPickedUp
-            // or MailDelivered events
+
+
+            // Temporary, if the door is closed then queue up a MailDelivered event
             match door_sensor.state().unwrap().clone() {
                 Bundle::ContactSensor { open: false } => {
-                    // Here we should also determine if mail is delivered or not. This will require the camera.
-                    let mut rng = rand::thread_rng();
-                    let x: u8 = rng.gen();
-                    info!("{x}");
-                    if x < 128 {
-                        info!("Queueing up a MailDelivered Event");
-                        event_queue.push(Event::new(
-                            EventKind::MailDelivered,
-                            None,
-                            None
-                        ));
-                    } else {
-                        info!("Queueing up a MailPickedUp Event");
-                        event_queue.push(Event::new(
-                            EventKind::MailPickedUp,
-                            None,
-                            None
-                        ));
-                    }
+                    info!("Queueing up a MailDelivered Event");
+                    event_queue.push(Event::new(
+                        EventKind::MailDelivered,
+                        None,
+                        None
+                    ));
                 },
                 _ => {}
             }
