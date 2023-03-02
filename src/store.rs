@@ -1,13 +1,14 @@
-use std::env;
 use log::*;
 
 use sqlx::SqlitePool;
 
 use crate::model::{Event, EventKind};
 
+pub const DB_LOCATION: &'static str = "sqlite:modkit.db";
+
 #[derive(thiserror::Error, Debug)]
 pub enum StoreError {
-    #[error("The DATABASE_URL environment variable is not set, or the location is incorrect")]
+    #[error("File database file {DB_LOCATION} does not exist or cannot be found")]
     BadDBLocation(#[from] std::env::VarError),
     /// A wrapper around any SQLx Error
     #[error("SQLx error: {0}")]
@@ -27,22 +28,10 @@ impl StoreError {
 pub struct Store(SqlitePool);
 
 impl Store {
-    /// Connects to a Sqlite database. You must set the `DATABASE_URL` environment variable.
-    /// 
-    /// Example:
-    /// ```
-    /// $ export DATABASE_URL=sqlite:my_db_file.db
-    /// ```
+    /// Connects to a Sqlite database.
     pub async fn connect() -> Result<Self, StoreError> {
-        let db_location;
-        #[cfg(debug_assertions)] {
-            db_location = env::var("DATABASE_URL")?;
-        }
-        #[cfg(not(debug_assertions))] {
-            db_location = String::from("sqlite:modkit.db");
-        }
-        info!("Using {db_location} as database location");
-        let pool = SqlitePool::connect(&db_location).await?;
+        info!("Using {DB_LOCATION} as database location");
+        let pool = SqlitePool::connect(DB_LOCATION).await?;
         Ok(Store(pool))
     }
 

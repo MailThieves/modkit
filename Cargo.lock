@@ -721,6 +721,7 @@ dependencies = [
  "env_logger",
  "futures",
  "log",
+ "rand",
  "serde",
  "serde_json",
  "sqlx",

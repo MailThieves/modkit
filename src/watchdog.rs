@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use log::*;
+use rand::Rng;
 
 use crate::drivers::contact_sensor::ContactSensor;
 use crate::drivers::device::{Device, DeviceType};
@@ -42,7 +43,33 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                 Some(bundle),
             ));
 
-            // Here we should also determine if mail is delivered or not. This will require the camera.
+            // Temporary, if the door is closed then randomly generate MailPickedUp
+            // or MailDelivered events
+            match door_sensor.state().unwrap().clone() {
+                Bundle::ContactSensor { open: false } => {
+                    // Here we should also determine if mail is delivered or not. This will require the camera.
+                    let mut rng = rand::thread_rng();
+                    let x: u8 = rng.gen();
+                    info!("{x}");
+                    if x < 128 {
+                        info!("Queueing up a MailDelivered Event");
+                        event_queue.push(Event::new(
+                            EventKind::MailDelivered,
+                            None,
+                            None
+                        ));
+                    } else {
+                        info!("Queueing up a MailPickedUp Event");
+                        event_queue.push(Event::new(
+                            EventKind::MailPickedUp,
+                            None,
+                            None
+                        ));
+                    }
+                },
+                _ => {}
+            }
+            
         }
 
         // For all events in the queue, send them to all clients
