@@ -1,7 +1,6 @@
 use std::time::Duration;
 
 use log::*;
-use rand::Rng;
 
 use crate::drivers::contact_sensor::ContactSensor;
 use crate::drivers::device::{Device, DeviceType};
