@@ -16,7 +16,9 @@ pub enum StoreError {
     /// A general database decode error that can turn into a SQLx Error::Decode error
     #[error("Could not decode value from database: {0}")]
     DecodeError(String),
-    #[error("A mail status event (MailDelivered/MailPickedUp) could not be found in the database: {0}")]
+    #[error(
+        "A mail status event (MailDelivered/MailPickedUp) could not be found in the database: {0}"
+    )]
     MailStatusNotFound(sqlx::Error),
 }
 
@@ -50,6 +52,14 @@ impl Store {
         Ok(events)
     }
 
+    pub async fn nuke(&self) -> Result<(), StoreError> {
+        let mut connection = self.0.acquire().await?;
+        sqlx::query("DELETE FROM Events;")
+            .execute(&mut connection)
+            .await?;
+        Ok(())
+    }
+
     pub async fn get_mail_status(&self) -> Result<Event, StoreError> {
         let mut connection = self.0.acquire().await?;
 
@@ -64,7 +74,7 @@ impl Store {
         )
         .fetch_one(&mut connection)
         .await
-        .map_err(|e| StoreError::MailStatusNotFound(e) );
+        .map_err(|e| StoreError::MailStatusNotFound(e));
 
         latest
     }
@@ -120,27 +130,18 @@ mod tests {
 
     use super::*;
 
-    async fn clear_db() {
-        let store = Store::connect().await.unwrap();
-        sqlx::query("DELETE FROM Events;")
-            .execute(store.borrow_pool())
-            .await
-            .unwrap();
-    }
-
     #[tokio::test]
     async fn test_db_connection() {
-        clear_db().await;
-
         let store = Store::connect().await.expect("Couldn't connect to Store");
         assert!(!store.borrow_pool().is_closed());
     }
 
     #[tokio::test]
     async fn test_get_all_events() {
-        clear_db().await;
-
         let store = Store::connect().await.unwrap();
+        
+        store.nuke().await.unwrap();
+
         sqlx::query(r#"INSERT INTO Events (kind, timestamp, device, data)
             VALUES ("DoorOpened", 123456, "ContactSensor", "{""ContactSensor"":{""open"":true}}");"#)
             .execute(store.borrow_pool()).await.unwrap();
@@ -153,19 +154,27 @@ mod tests {
         assert_eq!(e.kind(), &EventKind::DoorOpened);
         assert!(e.data().is_some());
         assert_eq!(e.device_type().unwrap(), &DeviceType::ContactSensor);
+
+        store.nuke().await.unwrap();
     }
 
     #[tokio::test]
     async fn test_write_event() {
         let store = Store::connect().await.unwrap();
-
+        
+        store.nuke().await.unwrap();
+        
         let event = Event::new(EventKind::MailDelivered, None, None);
         store.write_event(event).await.unwrap();
+
+        store.nuke().await.unwrap();
     }
 
     #[tokio::test]
     async fn test_get_latest_mail_status() {
         let store = Store::connect().await.unwrap();
+        
+        store.nuke().await.unwrap();
 
         let events = vec![
             Event::new(EventKind::MailDelivered, None, None),
@@ -182,7 +191,7 @@ mod tests {
         assert!(latest.is_ok());
         assert_eq!(latest.unwrap().kind(), &EventKind::MailPickedUp);
 
-        clear_db().await;
+        store.nuke().await.unwrap();
 
         assert!(store.get_mail_status().await.is_err());
     }

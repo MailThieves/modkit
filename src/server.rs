@@ -123,7 +123,7 @@ pub mod ws {
         }
     }
 
-    fn wrong_way() -> Event {
+    pub fn wrong_way() -> Event {
         Event::error(&format!(
             "this Event type should only be sent from the server, not the from the client. Try another event type."
         ))
@@ -133,11 +133,11 @@ pub mod ws {
 
     /// When we receive a health check, just send it back.
     /// This just lets the client know that it's still connected ok!
-    fn handle_health_check(_: &Event) -> Event {
+    pub fn handle_health_check(_: &Event) -> Event {
         Event::new(EventKind::HealthCheck, None, None)
     }
 
-    fn handle_poll_device(event: &Event) -> Event {
+    pub fn handle_poll_device(event: &Event) -> Event {
         // If they didn't provide a device type, return with an error
         let dev_type = match event.device_type() {
             Some(d) => d,
@@ -161,22 +161,29 @@ pub mod ws {
         }
     }
 
-    async fn handle_event_history() -> Event {
-        let db = Store::connect().await.expect("Couldn't access the database!");
-        let events = db.get_all_events().await.expect("Couldn't get events from the db");
+    pub async fn handle_event_history() -> Event {
+        let db = Store::connect()
+            .await
+            .expect("Couldn't access the database!");
+        let events = db
+            .get_all_events()
+            .await
+            .expect("Couldn't get events from the db");
 
         Event::new(
             EventKind::EventHistory,
             None,
-            Some(Bundle::EventHistory { events })
+            Some(Bundle::EventHistory { events }),
         )
     }
 
-    async fn handle_mail_status() -> Event {
-        let db = Store::connect().await.expect("Couldn't access the database!");
+    pub async fn handle_mail_status() -> Event {
+        let db = Store::connect()
+            .await
+            .expect("Couldn't access the database!");
         match db.get_mail_status().await {
             Ok(event) => return event,
-            Err(e) => return Event::error(&format!("{e}"))
+            Err(e) => return Event::error(&format!("{e}")),
         }
     }
 }
@@ -342,12 +349,17 @@ pub mod http {
 
 #[cfg(test)]
 mod tests {
+    use crate::drivers::device::DeviceType;
+
     use super::*;
 
+    // Help function, just makes an empty client set
     fn clients() -> Clients {
         return Arc::new(Mutex::new(HashMap::new()));
     }
 
+    // Help function, gets the ws url
+    // Not actually using this right now
     async fn register_ws_url() -> http::RegisterResponse {
         let filter = http::register_route(&clients());
         let response = warp::test::request().path("/register").reply(&filter).await;
@@ -375,4 +387,95 @@ mod tests {
 
     // I tried to write a test for the websocket but goddamn it's complicated
     // Or i'm just a dumbass
+
+    #[test]
+    fn test_proper_health_check_response() {
+        let incoming = Event::new(EventKind::HealthCheck, None, None);
+        let outgoing = ws::handle_health_check(&incoming);
+        assert_eq!(outgoing.kind(), &EventKind::HealthCheck);
+        assert!(outgoing.timestamp() > 0);
+    }
+
+    #[test]
+    fn test_handle_poll_device_response() {
+        let incoming = Event::new(EventKind::PollDevice, Some(DeviceType::ContactSensor), None);
+        let outgoing = ws::handle_poll_device(&incoming);
+        assert_eq!(outgoing.kind(), &EventKind::PollDeviceResult);
+        assert!(outgoing.data().is_some());
+    }
+
+    #[tokio::test]
+    async fn test_handle_event_history_when_db_empty() {
+        let store = Store::connect().await.unwrap();
+
+        store.nuke().await.unwrap();
+
+        // let incoming = Event::new(EventKind::EventHistory, None, None);
+        // This handler is called when we get an EventHistory event but we don't actually
+        // need to pass it to the function since it doesn't use it.
+        let outgoing = ws::handle_event_history().await;
+
+        assert_eq!(outgoing.kind(), &EventKind::EventHistory);
+        assert!(outgoing.data().is_some());
+
+        let data = outgoing.data().unwrap();
+        match data {
+            Bundle::EventHistory { events } => assert!(events.is_empty()),
+            _ => assert_eq!("Event history should be an empty vec, not None", ""),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_event_history_when_db_not_empty() {
+        let store = Store::connect().await.unwrap();
+        store.nuke().await.unwrap();
+        // Write some event
+        store
+            .write_event(Event::new(EventKind::HealthCheck, None, None))
+            .await
+            .unwrap();
+
+        let outgoing = ws::handle_event_history().await;
+
+        assert_eq!(outgoing.kind(), &EventKind::EventHistory);
+        assert!(outgoing.data().is_some());
+
+        let data = outgoing.data().unwrap();
+        match data {
+            Bundle::EventHistory { events } => assert_eq!(events.len(), 1),
+            _ => assert_eq!("Events history should have 1 event", ""),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_handle_mail_status_when_db_empty() {
+        let store = Store::connect().await.unwrap();
+        store.nuke().await.unwrap();
+
+        let outgoing = ws::handle_mail_status().await;
+        assert_eq!(outgoing.kind(), &EventKind::Error);
+    }
+
+
+    #[tokio::test]
+    async fn test_handle_mail_status_when_db_not_empty() {
+        let store = Store::connect().await.unwrap();
+        store.nuke().await.unwrap();
+
+        store
+            .write_event(Event::new(EventKind::MailDelivered, None, None))
+            .await
+            .unwrap();
+
+        let outgoing = ws::handle_mail_status().await;
+        assert_eq!(outgoing.kind(), &EventKind::MailDelivered);
+    }
+
+    #[test]
+    fn test_handle_wrong_way() {
+        let outgoing = ws::wrong_way();
+        assert_eq!(outgoing.kind(), &EventKind::Error);
+    }
+
+    // TODO: Write some test for handle_message() that create a ws::Message (from warp) as input
 }
