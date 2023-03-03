@@ -16,7 +16,7 @@ mod watchdog;
 fn init_logging() {
     env_logger::Builder::new()
         .format_timestamp(None)
-        .filter(None, LevelFilter::Info)
+        .filter(Some("modkit"), LevelFilter::Info)
         .init();
 }
 
