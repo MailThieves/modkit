@@ -15,7 +15,9 @@ pub enum StoreError {
     SQLxError(#[from] sqlx::Error),
     /// A general database decode error that can turn into a SQLx Error::Decode error
     #[error("Could not decode value from database: {0}")]
-    DecodeError(String)
+    DecodeError(String),
+    #[error("A mail status event (MailDelivered/MailPickedUp) could not be found in the database: {0}")]
+    MailStatusNotFound(sqlx::Error),
 }
 
 impl StoreError {
@@ -23,7 +25,6 @@ impl StoreError {
         sqlx::Error::Decode(Box::new(self))
     }
 }
-
 
 pub struct Store(SqlitePool);
 
@@ -47,6 +48,25 @@ impl Store {
             .fetch_all(&mut connection)
             .await?;
         Ok(events)
+    }
+
+    pub async fn get_mail_status(&self) -> Result<Event, StoreError> {
+        let mut connection = self.0.acquire().await?;
+
+        let latest = sqlx::query_as::<_, Event>(
+            r#"
+            SELECT * FROM Events
+            WHERE ID = (SELECT MAX(ID) FROM Events
+                WHERE kind = 'MailDelivered'
+                OR kind = 'MailPickedUp'
+                ORDER BY timestamp
+            );"#,
+        )
+        .fetch_one(&mut connection)
+        .await
+        .map_err(|e| StoreError::MailStatusNotFound(e) );
+
+        latest
     }
 
     /// Write a single event to the db
@@ -122,7 +142,7 @@ mod tests {
 
         let store = Store::connect().await.unwrap();
         sqlx::query(r#"INSERT INTO Events (kind, timestamp, device, data)
-            VALUES ("DoorOpened", "2023-02-26 00:23:23.881440460 -06:00", "ContactSensor", "{""ContactSensor"":{""open"":true}}");"#)
+            VALUES ("DoorOpened", 123456, "ContactSensor", "{""ContactSensor"":{""open"":true}}");"#)
             .execute(store.borrow_pool()).await.unwrap();
 
         let events = store.get_all_events().await.unwrap();
@@ -131,7 +151,6 @@ mod tests {
         assert!(events.get(0).is_some());
         let e = events.get(0).unwrap();
         assert_eq!(e.kind(), &EventKind::DoorOpened);
-        assert!(e.timestamp().contains("2023-02-26"));
         assert!(e.data().is_some());
         assert_eq!(e.device_type().unwrap(), &DeviceType::ContactSensor);
     }
@@ -142,5 +161,29 @@ mod tests {
 
         let event = Event::new(EventKind::MailDelivered, None, None);
         store.write_event(event).await.unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_get_latest_mail_status() {
+        let store = Store::connect().await.unwrap();
+
+        let events = vec![
+            Event::new(EventKind::MailDelivered, None, None),
+            Event::new(EventKind::MailPickedUp, None, None),
+            Event::new(EventKind::MailDelivered, None, None),
+            Event::new(EventKind::MailPickedUp, None, None),
+        ];
+
+        for e in events {
+            store.write_event(e).await.unwrap();
+        }
+
+        let latest = store.get_mail_status().await;
+        assert!(latest.is_ok());
+        assert_eq!(latest.unwrap().kind(), &EventKind::MailPickedUp);
+
+        clear_db().await;
+
+        assert!(store.get_mail_status().await.is_err());
     }
 }

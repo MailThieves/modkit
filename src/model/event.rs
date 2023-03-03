@@ -1,5 +1,6 @@
 //! An event passed through websockets
 use std::fmt::Display;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;
@@ -19,6 +20,7 @@ pub enum EventKind {
     HealthCheck,
     PollDevice,
     EventHistory,
+    MailStatus,
     // Outgoing events
     MailDelivered,
     MailPickedUp,
@@ -34,6 +36,7 @@ impl EventKind {
             Self::HealthCheck => false,
             Self::PollDevice => false,
             Self::EventHistory => false,
+            Self::MailStatus => false,
             // Outgoing events
             Self::MailDelivered => true,
             Self::MailPickedUp => true,
@@ -62,6 +65,7 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for EventKind {
             "HealthCheck" => EventKind::HealthCheck,
             "PollDevice" => EventKind::PollDevice,
             "EventHistory" => EventKind::EventHistory,
+            "MailStatus" => EventKind::MailStatus,
             "MailDelivered" => EventKind::MailDelivered,
             "MailPickedUp" => EventKind::MailPickedUp,
             "DoorOpened" => EventKind::DoorOpened,
@@ -88,7 +92,7 @@ pub struct Event {
     ///
     /// This is typically only created by the ws server, not the client
     #[serde(skip_deserializing)]
-    timestamp: String,
+    timestamp: u32,
     /// Which device this event references, if any
     device: Option<DeviceType>,
     /// The optional data bundle being sent
@@ -113,9 +117,11 @@ impl<'r> FromRow<'r, SqliteRow> for Event {
 
 impl Event {
     pub fn new(kind: EventKind, device: Option<DeviceType>, data: Option<Bundle>) -> Self {
+        // This is a little messy but ok
+        let timestamp: u32 = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
         Self {
             kind,
-            timestamp: chrono::Local::now().to_string(),
+            timestamp,
             device,
             data,
         }
@@ -135,8 +141,8 @@ impl Event {
         &self.kind
     }
 
-    pub fn timestamp(&self) -> &str {
-        &self.timestamp
+    pub fn timestamp(&self) -> u32 {
+        self.timestamp
     }
 
     pub fn device_type(&self) -> Option<&DeviceType> {
@@ -156,7 +162,7 @@ impl Event {
     // from a WS message
     pub fn populate_timestamp(&mut self) {
         // TODO: Extract this format string to a crate-wide const? It's used in bundle printing
-        self.timestamp = chrono::Local::now().to_string();
+        self.timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
     }
 
     // Finds the device type associated with this event, and poll that device,
@@ -194,10 +200,10 @@ mod tests {
 
     fn event_strings() -> Vec<String> {
         vec![
-            r#"{"kind":"HealthCheck","timestamp":"timestamp goes here"}"#.to_string(),
-            r#"{"kind":"MailDelivered","timestamp":"timestamp goes here"}"#.to_string(),
-            r#"{"kind":"MailPickedUp","timestamp":"timestamp goes here"}"#.to_string(),
-            r#"{"kind":"DoorOpened","timestamp":"timestamp goes here"}"#.to_string(),
+            r#"{"kind":"HealthCheck","timestamp":12345}"#.to_string(),
+            r#"{"kind":"MailDelivered","timestamp":12345}"#.to_string(),
+            r#"{"kind":"MailPickedUp","timestamp":12345}"#.to_string(),
+            r#"{"kind":"DoorOpened","timestamp":12345}"#.to_string(),
         ]
     }
 

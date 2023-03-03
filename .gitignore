@@ -4,3 +4,4 @@
 *.db-wal
 test_db.db
 modkit.db
+*.session.sql

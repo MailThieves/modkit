@@ -107,6 +107,7 @@ pub mod ws {
             EventKind::HealthCheck => handle_health_check(&event),
             EventKind::PollDevice => handle_poll_device(&event),
             EventKind::EventHistory => handle_event_history().await,
+            EventKind::MailStatus => handle_mail_status().await,
             // We already filtered out outgoing events, so this must mean we added a new
             // type of incoming event and didn't write a handler for it
             _ => {
@@ -167,8 +168,16 @@ pub mod ws {
         Event::new(
             EventKind::EventHistory,
             None,
-            Some(Bundle::EventHistory { events: events })
+            Some(Bundle::EventHistory { events })
         )
+    }
+
+    async fn handle_mail_status() -> Event {
+        let db = Store::connect().await.expect("Couldn't access the database!");
+        match db.get_mail_status().await {
+            Ok(event) => return event,
+            Err(e) => return Event::error(&format!("{e}"))
+        }
     }
 }
 
