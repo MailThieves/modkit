@@ -13,4 +13,4 @@ cargo build --release --target=${TARGET_ARCH}
 cargo build --example gpio --release --target=${TARGET_ARCH}
 
 cp $RELEASE_PATH bin/rpi/modkit
-cp $GPIO_EXAMPLE_PATH bin/rpi/gpio_example
+cp $GPIO_EXAMPLE_PATH bin/rpi/gpio_status
