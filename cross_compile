@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Instructions for setting up cross compiling here:
+# https://medium.com/swlh/compiling-rust-for-raspberry-pi-arm-922b55dbb050
+
 set -o errexit
 set -o nounset
 set -o pipefail
