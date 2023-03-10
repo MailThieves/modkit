@@ -24,9 +24,23 @@ fn init_logging() {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
 
+    match std::env::var("MODKIT_ENABLE_HARDWARE") {
+        Ok(enable) => {
+            if enable == "1" {
+                info!("Modkit Hardware is enabled (MODKIT_ENABLE_HARDWARE={enable})");
+            } else {
+                info!("Modkit Hardware is disabled (MODKIT_ENABLE_HARDWARE={enable})");
+            }
+        },
+        Err(e) => {
+            error!("{e}: MODKIT_ENABLE_HARDWARE environment variable not set. Set to 0 or 1 before running.");
+            error!("Disabling hardware will use simulated hardware for testing purposes. Enabling will use the GPIO and camera hardware");
+        },
+    }
+
     // Try to connect to the DB so we get a nice error message at boot when it fails
     match store::Store::connect().await {
-        Ok(_) => info!("DB connected successfully"),
+        Ok(_) => debug!("DB connected successfully"),
         Err(e) => {
             error!("Database couldn't be reached");
             error!("{e}");
