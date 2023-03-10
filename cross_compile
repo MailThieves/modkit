@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o xtrace
+
+readonly TARGET_ARCH=armv7-unknown-linux-gnueabihf
+readonly RELEASE_PATH=./target/${TARGET_ARCH}/release/modkit
+
+cargo build --release --target=${TARGET_ARCH}
+
+cp $RELEASE_PATH bin/modkit_rpi
