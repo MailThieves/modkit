@@ -7,24 +7,25 @@ use crate::drivers::Result;
 use crate::drivers::device::Device;
 use crate::model::Bundle;
 
+/// The GPIO pin to use
+const GPIO_PIN: u8 = 18;
+
 #[derive(Debug)]
-pub struct ContactSensorSim {
-    name: String,
+pub struct ContactSensor {
     /// Storing the state can be useful when watching for changes
     state: Option<Bundle>
 }
 
-impl ContactSensorSim {
+impl ContactSensor {
     /// Creates a new ContactSensor
-    pub fn new(name: &str) -> Self {
-        ContactSensorSim {
-            name: String::from(name),
+    pub fn new() -> Self {
+        ContactSensor {
             state: None
         }
     }
 }
 
-impl ContactSensorSim {
+impl ContactSensor {
     pub fn changed(&mut self) -> Result<bool> {
         let new = self.poll()?;
 
@@ -45,10 +46,9 @@ impl ContactSensorSim {
     }
 }
 
-impl Device for ContactSensorSim {
-    /// Returns the given name for the sensor
+impl Device for ContactSensor {
     fn name(&self) -> &str {
-        &self.name
+        return "Door Sensor"
     }
 
     /// Returns Ok() if the device is connected, Err(e) otherwise
@@ -95,10 +95,6 @@ mod tests {
 
     use super::*;
 
-    fn cs() -> ContactSensorSim {
-        ContactSensorSim::new("Door Sensor")
-    }
-
     // 1 for open, 0 for closed
     fn set_door(open: &str) {
         let mut file = File::create("./sensor.txt").unwrap();
@@ -107,14 +103,14 @@ mod tests {
 
     #[test]
     fn test_contact_sensor_connection() {
-        let cs = ContactSensorSim::new("Door Sensor");
+        let cs = ContactSensor::new();
         assert_eq!(cs.name(), "Door Sensor");
         assert_eq!(cs.connected(), Ok(()));
     }
 
     #[test]
     fn test_contact_sensor_poll() {
-        let cs = cs();
+        let cs = ContactSensor::new();
         assert_eq!(cs.connected(), Ok(()));
         assert!(cs.poll().is_ok());
     }
@@ -122,7 +118,7 @@ mod tests {
     #[test]
     fn test_door_is_open() {
         set_door("1");
-        let cs = cs();
+        let cs = ContactSensor::new();
         
         let res = cs.poll();
         assert!(res.is_ok());
@@ -138,7 +134,7 @@ mod tests {
 
     #[test]
     fn test_contact_sensor_is_active() {
-        let cs = cs();
+        let cs = ContactSensor::new();
         set_door("0");
         assert_eq!(cs.is_active(), Ok(false));
         set_door("1");
@@ -148,7 +144,7 @@ mod tests {
     #[test]
     fn test_changed() {
         set_door("0");
-        let mut cs = cs();
+        let mut cs = ContactSensor::new();
 
         assert_eq!(cs.changed(), Ok(true));
         assert_eq!(cs.changed(), Ok(false));

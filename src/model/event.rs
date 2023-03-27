@@ -7,7 +7,7 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{FromRow, Row};
 use warp::ws::Message;
 
-use crate::drivers::contact_sensor_sim::ContactSensorSim;
+use crate::drivers::contact_sensor::ContactSensor;
 use crate::drivers::device::{Device, DeviceType};
 use crate::drivers::DeviceError;
 use crate::model::Bundle;
@@ -171,7 +171,7 @@ impl Event {
 
         let bundle = match self.device.as_ref().unwrap() {
             DeviceType::ContactSensor => {
-                let sensor = ContactSensorSim::new("Door Sensor");
+                let sensor = ContactSensor::new();
                 sensor.poll()
             }
             DeviceType::Camera => {

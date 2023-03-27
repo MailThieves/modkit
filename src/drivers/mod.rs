@@ -5,7 +5,7 @@ use self::device::DeviceType;
 use crate::model::Event;
 
 pub mod device;
-pub mod contact_sensor_sim;
+pub mod contact_sensor;
 
 #[allow(unused)]
 #[derive(Error, Debug, PartialEq)]
