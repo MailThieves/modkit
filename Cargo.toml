@@ -21,3 +21,9 @@ uuid = {version = "1.2", features = ["v4"]}
 sqlx = {version = "0.6.2", features = ["sqlite", "runtime-tokio-native-tls"] }
 openssl = { version = "*", features = ["vendored"] }
 rppal = "0.14.1"
+
+
+[features]
+default = []
+# Enabling this feature will get actual data from the hardware
+hardware = []

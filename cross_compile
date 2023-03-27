@@ -12,7 +12,7 @@ readonly TARGET_ARCH=armv7-unknown-linux-gnueabihf
 readonly RELEASE_PATH=./target/${TARGET_ARCH}/release/modkit
 readonly GPIO_EXAMPLE_PATH=./target/${TARGET_ARCH}/release/examples/gpio
 
-cargo build --release --target=${TARGET_ARCH}
+cargo build --release --features hardware --target=${TARGET_ARCH}
 cargo build --example gpio --release --target=${TARGET_ARCH}
 
 cp $RELEASE_PATH bin/rpi/modkit

@@ -1,14 +1,23 @@
-use std::fs::File;
-use std::io::Read;
-
 use log::*;
 
 use crate::drivers::Result;
 use crate::drivers::device::Device;
 use crate::model::Bundle;
 
+// Conditional imports
+// Hardware disabled
+#[cfg(not(feature = "hardware"))]
+use std::{fs::File, io::Read};
+
+// Conditional imports
+// Hardware enabled
+#[cfg(feature = "hardware")]
+use rppal::gpio::Gpio;
+
+#[cfg(feature = "hardware")]
 /// The GPIO pin to use
-const GPIO_PIN: u8 = 18;
+const CONTACT_SENSOR_GPIO_PIN: u8 = 18;
+
 
 #[derive(Debug)]
 pub struct ContactSensor {
@@ -56,6 +65,7 @@ impl Device for ContactSensor {
         Ok(())
     }
 
+    #[cfg(not(feature = "hardware"))]
     /// Returns a Bundle of data, in this case just { open: bool }, wrapped in a result
     fn poll(&self) -> Result<Bundle> {
         // This is temporary, I'm using the contents of a file to simulate the switch
@@ -69,6 +79,14 @@ impl Device for ContactSensor {
         let state: bool = if buffer.trim() == String::from("1") { true } else { false };
         
         Ok(Bundle::ContactSensor { open: state })
+    }
+
+    #[cfg(feature = "hardware")]
+    fn poll(&self) -> Result<Bundle> {
+        let pin = Gpio::new()?.get(CONTACT_SENSOR_GPIO_PIN)?.into_input();
+        // Switch is NC
+        let open: bool = pin.is_low();
+        return Ok(Bundle::ContactSensor { open })
     }
 
     // Calls `poll()` and return Ok(true), Ok(false), or Err(e)

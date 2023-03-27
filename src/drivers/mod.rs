@@ -1,4 +1,5 @@
 use thiserror::Error;
+use rppal::gpio;
 
 use self::device::DeviceType;
 
@@ -15,7 +16,17 @@ pub enum DeviceError {
     #[error("Communication error: {0}")]
     CommunicationError(String),
     #[error("You provided `{0:?}` which is not a valid device type")]
-    DeviceNotFound(Option<DeviceType>)
+    DeviceNotFound(Option<DeviceType>),
+    #[error("GPIO Error: {0}")]
+    GpioError(String)
+}
+
+/// gpio::Error doesn't implement PartialEq, so it can't be automatically
+/// converted. I'll open a pull request.
+impl From<gpio::Error> for DeviceError {
+    fn from(error: gpio::Error) -> Self {
+        Self::GpioError(format!("{error}"))
+    }
 }
 
 impl Into<Event> for DeviceError {
