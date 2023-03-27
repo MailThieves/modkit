@@ -5,8 +5,9 @@ use self::device::DeviceType;
 use crate::model::Event;
 
 pub mod device;
-pub mod contact_sensor;
+pub mod contact_sensor_sim;
 
+#[allow(unused)]
 #[derive(Error, Debug, PartialEq)]
 pub enum DeviceError {
     #[error("No device `{0}` connected")]

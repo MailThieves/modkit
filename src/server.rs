@@ -198,12 +198,6 @@ pub mod http {
         url: String,
     }
 
-    impl RegisterResponse {
-        pub(crate) fn url(&self) -> &str {
-            &self.url
-        }
-    }
-
     pub fn register_route(
         ws_clients: &Clients,
     ) -> impl Filter<Extract = (impl warp::Reply,), Error = warp::Rejection> + Clone {
@@ -358,8 +352,9 @@ mod tests {
         return Arc::new(Mutex::new(HashMap::new()));
     }
 
-    // Help function, gets the ws url
+    // Helper function, gets the ws url
     // Not actually using this right now
+    #[allow(unused)]
     async fn register_ws_url() -> http::RegisterResponse {
         let filter = http::register_route(&clients());
         let response = warp::test::request().path("/register").reply(&filter).await;

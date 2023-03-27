@@ -39,6 +39,7 @@ impl Store {
     }
 
     /// Borrows the connection pool
+    #[allow(unused)]
     pub fn borrow_pool(&self) -> &SqlitePool {
         &self.0
     }
@@ -52,6 +53,7 @@ impl Store {
         Ok(events)
     }
 
+    #[allow(unused)]
     pub async fn nuke(&self) -> Result<(), StoreError> {
         let mut connection = self.0.acquire().await?;
         sqlx::query("DELETE FROM Events;")

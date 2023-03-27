@@ -8,29 +8,23 @@ use crate::drivers::device::Device;
 use crate::model::Bundle;
 
 #[derive(Debug)]
-pub struct ContactSensor {
+pub struct ContactSensorSim {
     name: String,
-    // TODO: rename this to GPIO pin?
-    addr: u8, 
-    // TODO: Get rid of this?
-    port: String,
     /// Storing the state can be useful when watching for changes
     state: Option<Bundle>
 }
 
-impl ContactSensor {
+impl ContactSensorSim {
     /// Creates a new ContactSensor
-    pub fn new(name: &str, addr: u8, port: &str) -> Self {
-        ContactSensor {
+    pub fn new(name: &str) -> Self {
+        ContactSensorSim {
             name: String::from(name),
-            addr,
-            port: String::from(port),
             state: None
         }
     }
 }
 
-impl ContactSensor {
+impl ContactSensorSim {
     pub fn changed(&mut self) -> Result<bool> {
         let new = self.poll()?;
 
@@ -51,7 +45,7 @@ impl ContactSensor {
     }
 }
 
-impl Device for ContactSensor {
+impl Device for ContactSensorSim {
     /// Returns the given name for the sensor
     fn name(&self) -> &str {
         &self.name
@@ -68,7 +62,7 @@ impl Device for ContactSensor {
         // since I don't have a physical switch yet
         trace!("Trying to read a 1 or 0 from ./sensor.txt (temporary placeholder until we get the hardware)");
         let mut buffer = String::new();
-        File::open(&self.port)
+        File::open("./sensor.txt")
             .unwrap()
             .read_to_string(&mut buffer)
             .unwrap();
@@ -101,8 +95,8 @@ mod tests {
 
     use super::*;
 
-    fn cs() -> ContactSensor {
-        ContactSensor::new("Door Sensor", 0x01, "./sensor.txt")
+    fn cs() -> ContactSensorSim {
+        ContactSensorSim::new("Door Sensor")
     }
 
     // 1 for open, 0 for closed
@@ -113,7 +107,7 @@ mod tests {
 
     #[test]
     fn test_contact_sensor_connection() {
-        let cs = ContactSensor::new("Door Sensor", 0x01, "./sensor.txt");
+        let cs = ContactSensorSim::new("Door Sensor");
         assert_eq!(cs.name(), "Door Sensor");
         assert_eq!(cs.connected(), Ok(()));
     }

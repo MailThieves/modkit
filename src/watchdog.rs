@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use log::*;
 
-use crate::drivers::contact_sensor::ContactSensor;
+use crate::drivers::contact_sensor_sim::ContactSensorSim;
 use crate::drivers::device::{Device, DeviceType};
 use crate::server::Clients;
 use crate::store::Store;
@@ -24,7 +24,7 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
     let store = Store::connect().await?;
 
     // First, set up our door sensor
-    let mut door_sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
+    let mut door_sensor = ContactSensorSim::new("Door Sensor");
 
     let mut event_queue: Vec<Event> = Vec::new();
 

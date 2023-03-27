@@ -7,7 +7,7 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{FromRow, Row};
 use warp::ws::Message;
 
-use crate::drivers::contact_sensor::ContactSensor;
+use crate::drivers::contact_sensor_sim::ContactSensorSim;
 use crate::drivers::device::{Device, DeviceType};
 use crate::drivers::DeviceError;
 use crate::model::Bundle;
@@ -46,10 +46,6 @@ impl EventKind {
             // note that i'm not using _ as a catch all; don't want to accidentally miss a
             // new event type that may be outgoing
         }
-    }
-
-    pub fn is_incoming(&self) -> bool {
-        !self.is_outgoing()
     }
 }
 
@@ -175,7 +171,7 @@ impl Event {
 
         let bundle = match self.device.as_ref().unwrap() {
             DeviceType::ContactSensor => {
-                let sensor = ContactSensor::new("Door Sensor", 0, "sensor.txt");
+                let sensor = ContactSensorSim::new("Door Sensor");
                 sensor.poll()
             }
             DeviceType::Camera => {
@@ -231,8 +227,8 @@ mod tests {
         assert!(EventKind::DoorOpened.is_outgoing());
         assert!(EventKind::PollDeviceResult.is_outgoing());
 
-        assert!(EventKind::PollDevice.is_incoming());
-        assert!(EventKind::HealthCheck.is_incoming());
+        assert!(!EventKind::PollDevice.is_outgoing());
+        assert!(!EventKind::HealthCheck.is_outgoing());
     }
 
     #[test]
@@ -241,8 +237,8 @@ mod tests {
             .kind()
             .is_outgoing());
 
-        assert!(Event::new(EventKind::PollDevice, None, None)
+        assert!(!Event::new(EventKind::PollDevice, None, None)
             .kind()
-            .is_incoming());
+            .is_outgoing());
     }
 }
