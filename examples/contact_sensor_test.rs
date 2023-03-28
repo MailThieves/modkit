@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use log::*;
 use modkit::prelude::*;
 use rppal::gpio::Gpio;
