@@ -1,4 +1,3 @@
-use std::fs::create_dir;
 use std::path::{Path, PathBuf};
 
 use image::{ImageBuffer, RgbImage};
@@ -11,30 +10,6 @@ pub struct Camera;
 impl Camera {
     pub fn new() -> Self {
         return Self;
-    }
-
-    // Simulation for when we're not connected to the camera
-    fn capture_img(&self) -> Result<ImageBuffer<image::Rgb<u8>, Vec<u8>>, DeviceError> {
-        let mut img: RgbImage = ImageBuffer::new(50, 50);
-        *img.get_pixel_mut(25, 25) = image::Rgb([255, 255, 255]);
-
-        Ok(img)
-    }
-
-    pub fn capture_default(&self) -> Result<PathBuf, DeviceError> {
-        let mut path = PathBuf::from("./img");
-
-        if !path.exists() {
-            info!("./img/ directory didn't already exist, I'm creating it for you");
-            create_dir(&path)?;
-        }
-        path.push(format!("{}.jpg", chrono::Utc::now().timestamp()));
-
-        let img = self.capture_img().unwrap();
-
-        trace!("Writing captured image to {}", path.display());
-        img.save(&path)?;
-        Ok(path)
     }
 
     /// Accepts a directory to place the image in. Will fail if the directory doesn't exist
@@ -69,7 +44,9 @@ impl Camera {
         img_path.push(format!("{}.jpg", chrono::Utc::now().timestamp()));
         
         // Generate an image and save it
-        let img = self.capture_img()?;
+        let mut img: RgbImage = ImageBuffer::new(50, 50);
+        *img.get_pixel_mut(25, 25) = image::Rgb([255, 255, 255]);
+
         trace!("Writing captured image to {}", img_path.display());
         img.save(&img_path)?;
 
@@ -81,29 +58,6 @@ impl Camera {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
-    #[test]
-    fn test_capture_image() {
-        let camera = Camera::new();
-        let img_path_res = camera.capture_default();
-
-        assert!(img_path_res.is_ok());
-        if let Ok(img_path) = img_path_res {
-            assert!(img_path.exists());
-            assert_eq!(img_path.extension().unwrap(), "jpg");
-        }
-    }
-
-    #[test]
-    fn test_img_dir_doesnt_already_exist() {
-        let path = PathBuf::from("./img");
-        std::fs::remove_dir_all(&path).unwrap();
-
-        assert!(!path.exists());
-
-        assert!(Camera::new().capture_default().is_ok());
-        assert!(path.exists());
-    }
 
     #[test]
     fn test_capture_and_place_somewhere() {
