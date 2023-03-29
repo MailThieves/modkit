@@ -41,7 +41,7 @@ pub mod light {
     }
 
     pub fn is_on() -> Result<bool, DeviceError> {
-        let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output_low();
+        let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
         Ok(light_pin.is_set_high())
     }
 }
