@@ -40,8 +40,6 @@ pub mod camera {
         let mut img_path = PathBuf::from(dir_path);
         img_path.push(format!("{}.jpg", chrono::Utc::now().timestamp()));
 
-        img_path = img_path.canonicalize().unwrap();
-
         trace!("File path: {}", img_path.display());
 
         let args = ["--drc", "high", "--width", "800", "--height", "550", "--timeout", "1", "-o", &format!("{}", img_path.display())];
