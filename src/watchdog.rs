@@ -48,6 +48,8 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                 Some(bundle.clone()),
             ));
 
+            debug!("Door bundle = {:?}", bundle);
+
             if let Bundle::ContactSensor { open: true } = bundle {
                 trace!("Found door to be open, taking a picture!");
 
