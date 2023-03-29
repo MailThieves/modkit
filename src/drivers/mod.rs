@@ -10,6 +10,7 @@ use crate::model::Event;
 pub mod device;
 pub mod contact_sensor;
 pub mod camera;
+pub mod light;
 
 #[allow(unused)]
 #[derive(Error, Debug, PartialEq)]

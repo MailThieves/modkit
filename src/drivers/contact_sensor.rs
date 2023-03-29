@@ -4,9 +4,6 @@ use crate::drivers::Result;
 use crate::drivers::device::Device;
 use crate::model::Bundle;
 
-// Conditional imports
-// Hardware disabled
-#[cfg(not(feature = "hardware"))]
 use std::{fs::File, io::Read};
 
 // Conditional imports
@@ -14,8 +11,6 @@ use std::{fs::File, io::Read};
 #[cfg(feature = "hardware")]
 use rppal::gpio::Gpio;
 
-#[cfg(feature = "hardware")]
-/// The GPIO pin to use
 const CONTACT_SENSOR_GPIO_PIN: u8 = 18;
 
 

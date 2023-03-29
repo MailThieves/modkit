@@ -13,14 +13,17 @@ readonly RELEASE_PATH=./target/${TARGET_ARCH}/release/modkit
 readonly GPIO_EXAMPLE_PATH=./target/${TARGET_ARCH}/release/examples/gpio
 readonly CONTACT_SENSOR_TEST_PATH=./target/${TARGET_ARCH}/release/examples/contact_sensor_test
 readonly CAMERA_TEST_PATH=./target/${TARGET_ARCH}/release/examples/camera_test
+readonly LIGHT_TEST_PATH=./target/${TARGET_ARCH}/release/examples/light_test
 
 cargo build --release --features hardware --target=${TARGET_ARCH}
 cargo build --example gpio --release --target=${TARGET_ARCH}
 cargo build --features hardware --example contact_sensor_test --release --target=${TARGET_ARCH}
 cargo build --features hardware --example camera_test --release --target=${TARGET_ARCH}
+cargo build --features hardware --example light_test --release --target=${TARGET_ARCH}
 
 cp $RELEASE_PATH bin/rpi/modkit
 cp $GPIO_EXAMPLE_PATH bin/rpi/gpio_status
 cp $CONTACT_SENSOR_TEST_PATH bin/rpi/watch_contact_sensor
 cp $CAMERA_TEST_PATH bin/rpi/camera_test
+cp $LIGHT_TEST_PATH bin/rpi/light_test
 
