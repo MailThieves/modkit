@@ -1,20 +1,10 @@
-use cfg_if::cfg_if;
+use std::{fs::File, io::Read};
 use log::*;
+use rppal::gpio::Gpio;
 
-use crate::drivers::Result;
+use crate::drivers::{Result, hardware_enabled};
 
-cfg_if! {
-    if #[cfg(feature = "hardware")] {
-        // Hardware enabled imports
-        use rppal::gpio::Gpio;
-
-        const CONTACT_SENSOR_GPIO_PIN: u8 = 18;
-    } else {
-        // Hardware disabled imports
-        use std::{fs::File, io::Read};
-
-    }
-}
+const CONTACT_SENSOR_GPIO_PIN: u8 = 18;
 
 #[derive(Debug)]
 // true = door open
@@ -46,11 +36,19 @@ impl ContactSensor {
     }
 
 
-    #[cfg(not(feature = "hardware"))]
     /// Returns Ok(true) is the door is open.
-    /// 
-    /// This is the non-hardware version.
     pub fn poll(&self) -> Result<bool> {
+
+        // Get the real values if we're on the pi
+        if hardware_enabled() {
+            let pin = Gpio::new()?
+                .get(CONTACT_SENSOR_GPIO_PIN)?
+                .into_input_pullup();
+            // low = 0 = closed
+            return Ok(pin.is_high());
+        }
+
+        // Otherwise simulate it
         trace!("Trying to read a 1 or 0 from ./sensor.txt (temporary placeholder until we get the hardware)");
         let mut buffer = String::new();
         File::open("./sensor.txt")
@@ -58,15 +56,7 @@ impl ContactSensor {
             .read_to_string(&mut buffer)
             .unwrap();
         Ok(buffer.trim() == String::from("1"))
-    }
 
-    #[cfg(feature = "hardware")]
-    pub fn poll(&self) -> Result<bool> {
-        let pin = Gpio::new()?
-            .get(CONTACT_SENSOR_GPIO_PIN)?
-            .into_input_pullup();
-        // low = 0 = closed
-        Ok(pin.is_high())
     }
 }
 
@@ -95,12 +85,12 @@ mod tests {
 
         let res = cs.poll();
         assert!(res.is_ok());
-        assert!(res.unwrap(), true);
+        assert_eq!(res.unwrap(), true);
 
         set_door("0");
         let res2 = cs.poll();
         assert!(res2.is_ok());
-        assert!(res2.unwrap(), false);
+        assert_eq!(res2.unwrap(), false);
     }
 
     #[test]
@@ -108,7 +98,7 @@ mod tests {
         set_door("0");
         let mut cs = ContactSensor::new();
 
-        assert_eq!(cs.changed(), Ok(true));
+        // Defaults to false
         assert_eq!(cs.changed(), Ok(false));
         assert_eq!(cs.changed(), Ok(false));
 
@@ -120,4 +110,5 @@ mod tests {
         assert_eq!(cs.changed(), Ok(true));
         assert_eq!(cs.changed(), Ok(false));
     }
+
 }

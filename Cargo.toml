@@ -24,8 +24,3 @@ openssl = { version = "*", features = ["vendored"] }
 rppal = "0.14.1"
 image = "0.24.6"
 cfg-if = "1.0.0"
-
-[features]
-default = []
-# Enabling this feature will get actual data from the hardware
-hardware = []

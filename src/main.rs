@@ -13,21 +13,21 @@ mod store;
 mod watchdog;
 
 fn init_logging() {
-    env_logger::Builder::new()
-        .format_timestamp(None)
-        .filter(Some("modkit"), LevelFilter::Info)
-        .init();
+    // env_logger::Builder::new()
+    //     .format_timestamp(None)
+    //     .filter(Some("modkit"), LevelFilter::Info)
+    //     .init();
+    env_logger::init();
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
 
-    if cfg!(feature = "hardware") {
-        debug!("Compiled with `--features hardware`, using hardware data");
+    if drivers::hardware_enabled() {
+        info!("Hardware enabled");
     } else {
-        warn!("You have not compiled with `--features hardware`, fake data will be returned, and no real hardware values will be read");
-        warn!("Recompile with `cargo build --features hardware` to use the hardware");
+        warn!("Hardware disabled. This means that either (a) you're not running on the raspberry pi or (b) the GPIO is unavailable");
     }
 
     // Try to connect to the DB so we get a nice error message at boot when it fails

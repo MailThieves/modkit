@@ -29,6 +29,11 @@ pub enum DeviceError {
     IoError(String)
 }
 
+pub fn hardware_enabled() -> bool {
+    // Try to connect to the GPIO, if we can't then there's no hardware
+    rppal::gpio::Gpio::new().is_ok()
+}
+
 /// gpio::Error doesn't implement PartialEq, so it can't be automatically
 /// converted. I'll open a pull request.
 impl From<gpio::Error> for DeviceError {
