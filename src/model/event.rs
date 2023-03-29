@@ -8,7 +8,7 @@ use sqlx::{FromRow, Row};
 use warp::ws::Message;
 
 use crate::drivers::contact_sensor::ContactSensor;
-use crate::drivers::device::{Device, DeviceType};
+use crate::drivers::device::DeviceType;
 use crate::drivers::DeviceError;
 use crate::model::Bundle;
 use crate::store::StoreError;
@@ -172,7 +172,7 @@ impl Event {
         let bundle = match self.device.as_ref().unwrap() {
             DeviceType::ContactSensor => {
                 let sensor = ContactSensor::new();
-                sensor.poll()
+                Ok(Bundle::ContactSensor { open: sensor.poll()? })
             }
             DeviceType::Camera => {
                 // get camera stuff here

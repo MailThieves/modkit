@@ -80,3 +80,18 @@ impl fmt::Display for Bundle {
         }
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_contact_sensor_bundle() {
+        let bundle = Bundle::ContactSensor { open: true };
+        match bundle {
+            Bundle::ContactSensor { open: is_opened } => assert_eq!(is_opened, true),
+            _ => assert!(false),
+        }
+    }
+}

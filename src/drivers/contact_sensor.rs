@@ -1,16 +1,13 @@
-use log::*;
 use cfg_if::cfg_if;
+use log::*;
 
 use crate::drivers::Result;
-use crate::drivers::device::Device;
-use crate::model::Bundle;
-
 
 cfg_if! {
     if #[cfg(feature = "hardware")] {
         // Hardware enabled imports
         use rppal::gpio::Gpio;
-        
+
         const CONTACT_SENSOR_GPIO_PIN: u8 = 18;
     } else {
         // Hardware disabled imports
@@ -19,32 +16,27 @@ cfg_if! {
     }
 }
 
-
 #[derive(Debug)]
-pub struct ContactSensor {
-    /// Storing the state can be useful when watching for changes.
-    /// 
-    /// True = 1 = high = open
-    state: Option<Bundle>
-}
+// true = door open
+pub struct ContactSensor(bool);
 
 impl ContactSensor {
     /// Creates a new ContactSensor
     pub fn new() -> Self {
-        ContactSensor {
-            state: None
-        }
+        ContactSensor(false)
     }
-}
 
-impl ContactSensor {
+    pub fn is_open(&self) -> bool {
+        self.0
+    }
+
     pub fn changed(&mut self) -> Result<bool> {
         let new = self.poll()?;
 
-        // If there is no old state, or is the old and new state is different
-        if self.state.is_none() || *self.state.as_ref().unwrap() != new {
-            // Then update the old state 
-            self.state = Some(new);
+        // if the old and new state are different
+        if self.0 != new {
+            // Then update the old state
+            self.0 = new;
             // and return that there was a change
             return Ok(true);
         }
@@ -53,63 +45,30 @@ impl ContactSensor {
         Ok(false)
     }
 
-    pub fn state(&self) -> Option<&Bundle> {
-        self.state.as_ref()
-    }
-}
-
-impl Device for ContactSensor {
-    fn name(&self) -> &str {
-        return "Door Sensor"
-    }
-
-    /// Returns Ok() if the device is connected, Err(e) otherwise
-    fn connected(&self) -> Result<()> {
-        Ok(())
-    }
 
     #[cfg(not(feature = "hardware"))]
-    /// Returns a Bundle of data, in this case just { open: bool }, wrapped in a result
-    fn poll(&self) -> Result<Bundle> {
-        // This is temporary, I'm using the contents of a file to simulate the switch
-        // since I don't have a physical switch yet
+    /// Returns Ok(true) is the door is open.
+    /// 
+    /// This is the non-hardware version.
+    pub fn poll(&self) -> Result<bool> {
         trace!("Trying to read a 1 or 0 from ./sensor.txt (temporary placeholder until we get the hardware)");
         let mut buffer = String::new();
         File::open("./sensor.txt")
             .unwrap()
             .read_to_string(&mut buffer)
             .unwrap();
-        let state: bool = if buffer.trim() == String::from("1") { true } else { false };
-        
-        Ok(Bundle::ContactSensor { open: state })
+        Ok(buffer.trim() == String::from("1"))
     }
 
     #[cfg(feature = "hardware")]
-    fn poll(&self) -> Result<Bundle> {
-        let pin = Gpio::new()?.get(CONTACT_SENSOR_GPIO_PIN)?.into_input_pullup();
+    pub fn poll(&self) -> Result<bool> {
+        let pin = Gpio::new()?
+            .get(CONTACT_SENSOR_GPIO_PIN)?
+            .into_input_pullup();
         // low = 0 = closed
-        let is_open: bool = pin.is_high();
-        trace!("Read contact sensor state, door is open? {is_open}");
-        return Ok(Bundle::ContactSensor { open: is_open })
-    }
-
-    // Calls `poll()` and return Ok(true), Ok(false), or Err(e)
-    fn is_active(&self) -> Result<bool> {
-        match self.poll() {
-            Ok(Bundle::ContactSensor { open }) => return Ok(open),
-            Err(e) => return Err(e),
-            // other types of data bundles will never be returned
-            _ => panic!()
-        }
-    }
-
-    /// What to do when the watcher determines the device is activated
-    fn on_activate(&self) -> Result<()> {
-        info!("=> Contact Sensor is activated");
-        Ok(())
+        Ok(pin.is_high())
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -124,16 +83,8 @@ mod tests {
     }
 
     #[test]
-    fn test_contact_sensor_connection() {
-        let cs = ContactSensor::new();
-        assert_eq!(cs.name(), "Door Sensor");
-        assert_eq!(cs.connected(), Ok(()));
-    }
-
-    #[test]
     fn test_contact_sensor_poll() {
         let cs = ContactSensor::new();
-        assert_eq!(cs.connected(), Ok(()));
         assert!(cs.poll().is_ok());
     }
 
@@ -141,26 +92,15 @@ mod tests {
     fn test_door_is_open() {
         set_door("1");
         let cs = ContactSensor::new();
-        
+
         let res = cs.poll();
         assert!(res.is_ok());
-        let bundle = res.unwrap();
-        assert_eq!(bundle, Bundle::ContactSensor { open: true });
+        assert!(res.unwrap(), true);
 
         set_door("0");
         let res2 = cs.poll();
         assert!(res2.is_ok());
-        let bundle2 = res2.unwrap();
-        assert_eq!(bundle2, Bundle::ContactSensor { open: false });
-    }
-
-    #[test]
-    fn test_contact_sensor_is_active() {
-        let cs = ContactSensor::new();
-        set_door("0");
-        assert_eq!(cs.is_active(), Ok(false));
-        set_door("1");
-        assert_eq!(cs.is_active(), Ok(true));
+        assert!(res2.unwrap(), false);
     }
 
     #[test]

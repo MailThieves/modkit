@@ -4,7 +4,7 @@ use log::*;
 use modkit::prelude::camera;
 
 use crate::drivers::contact_sensor::ContactSensor;
-use crate::drivers::device::{Device, DeviceType};
+use crate::drivers::device::DeviceType;
 use crate::server::Clients;
 use crate::store::Store;
 use crate::{model::*, server};
@@ -33,11 +33,8 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
         // if the door sensor changes
         // (this calls poll() and updated the internal state)
         if door_sensor.changed().unwrap_or(false) {
-            // Call the on_activate() function
-            door_sensor.on_activate().unwrap();
-
-            // Get a copy of the state
-            let bundle = door_sensor.state().unwrap().clone();
+            
+            let is_open: bool = door_sensor.is_open();
 
             // Queue up an event to send with the door state.
             // We always send an event when the door opens or closes.
@@ -45,25 +42,27 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
             event_queue.push(Event::new(
                 EventKind::DoorOpened,
                 Some(DeviceType::ContactSensor),
-                Some(bundle.clone()),
+                Some(Bundle::ContactSensor { open: is_open }),
             ));
 
-            debug!("Door bundle = {:?}", bundle);
+            debug!("Door is open? {is_open}");
 
-            if let Bundle::ContactSensor { open: true } = bundle {
-                trace!("Found door to be open, taking a picture!");
-
+            // When the door changes to closed (ie. someone opens the box then
+            // closes it, mail delivered or picked up)
+            if !is_open {
+                trace!("Door just closed, taking a picture!");
+    
                 match camera::capture_into("./img") {
                     Ok(_) => trace!("Captured successfully, placed into `./img`"),
                     Err(e) => error!("{e}"),
                 };
-
+    
                 // Here we should check if mail was delievered or picked up.
                 // At the least we can use the DB to determine that.
                 // Best case scenario is to use image processing
                 info!("Queueing up a MailDelivered Event");
                 event_queue.push(Event::new(EventKind::MailDelivered, None, None));
-
+    
                 // Also send an image capture event
             }
         }
