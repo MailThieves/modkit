@@ -28,6 +28,7 @@ pub mod light {
     pub fn set(state: bool) -> Result<(), DeviceError> {
         trace!("Connecting to pin {:?}", LIGHT_GPIO_PIN);
         let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
+        trace!("GPIO reports Pin #{}", light_pin.pin());
         if state {
             trace!("Setting light pin {LIGHT_GPIO_PIN} high");
             light_pin.set_high();

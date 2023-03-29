@@ -84,11 +84,11 @@ impl Device for ContactSensor {
 
     #[cfg(feature = "hardware")]
     fn poll(&self) -> Result<Bundle> {
-        trace!("Connected to contact sensor pin {CONTACT_SENSOR_GPIO_PIN}");
         let pin = Gpio::new()?.get(CONTACT_SENSOR_GPIO_PIN)?.into_input_pullup();
         // Switch is NC (allegedly)
-        let open: bool = pin.is_low();
-        trace!("Contact sensor pin is low = {open}\t(meaning door open? {open})");
+        // I think they lied and it's actually NO
+        let open: bool = pin.is_high();
+        trace!("Read contact sensor state = {open}");
         return Ok(Bundle::ContactSensor { open })
     }
 
