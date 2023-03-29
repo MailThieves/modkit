@@ -1,2 +1,3 @@
 #!/bin/bash
 raspistill --drc high --width 800 --height 550 --timeout 1 -o test.jpg
+# --drc = high will make it perform better in low light

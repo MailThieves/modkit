@@ -1,8 +1,8 @@
 #[cfg(feature = "hardware")]
 pub mod camera {
     use std::path::{Path, PathBuf};
+    use std::process::Command;
 
-    use image::{ImageBuffer, RgbImage};
     use log::*;
 
     use super::super::light::light;
@@ -40,12 +40,13 @@ pub mod camera {
         let mut img_path = PathBuf::from(dir_path);
         img_path.push(format!("{}.jpg", chrono::Utc::now().timestamp()));
 
-        // Generate an image and save it
-        let mut img: RgbImage = ImageBuffer::new(50, 50);
-        *img.get_pixel_mut(25, 25) = image::Rgb([255, 255, 255]);
+        let args = ["--drc", "high", "--width", "800", "--height", "550", "--timeout", "1", "-o", &format!("{}", img_path.display())];
 
-        trace!("Writing captured image to {}", img_path.display());
-        img.save(&img_path)?;
+        trace!("Taking picture with raspistill");
+        Command::new("raspistill")
+            .args(args)
+            .output()
+            .expect("Run raspistill command");
 
         trace!("Turning light off after image capture");
         light::set(false)?;
