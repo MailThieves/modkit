@@ -25,12 +25,18 @@ pub mod light {
     const LIGHT_GPIO_PIN: u8 = 21;
 
     pub fn set(state: bool) -> Result<(), DeviceError> {
-        let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output_low();
+        let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
         if state {
             light_pin.set_high();
         } else {
             light_pin.set_low();
         }
+        Ok(())
+    }
+
+    pub fn toggle() -> Result<(), DeviceError> {
+        let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
+        light_pin.toggle();
         Ok(())
     }
 

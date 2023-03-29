@@ -18,9 +18,14 @@ fn main() {
 
     let mut state = true;
     loop {
-        info!("Toggling light");
-        info!("Light is on? {:?}", light::is_on());
+        info!("Setting light to state {}", state);
         light::set(state).expect("set light");
+        info!("Light is on? {:?}", light::is_on());
+        sleep(Duration::from_secs(2));
+
+        info!("Toggling light");
+        light::toggle().expect("toggle");
+
         sleep(Duration::from_secs(2));
         state = !state;
     }
