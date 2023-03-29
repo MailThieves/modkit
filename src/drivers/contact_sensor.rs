@@ -22,7 +22,9 @@ cfg_if! {
 
 #[derive(Debug)]
 pub struct ContactSensor {
-    /// Storing the state can be useful when watching for changes
+    /// Storing the state can be useful when watching for changes.
+    /// 
+    /// True = 1 = high = open
     state: Option<Bundle>
 }
 
@@ -85,11 +87,10 @@ impl Device for ContactSensor {
     #[cfg(feature = "hardware")]
     fn poll(&self) -> Result<Bundle> {
         let pin = Gpio::new()?.get(CONTACT_SENSOR_GPIO_PIN)?.into_input_pullup();
-        // Switch is NC (allegedly)
-        // I think they lied and it's actually NO
-        let open: bool = pin.is_high();
-        trace!("Read contact sensor state = {open}");
-        return Ok(Bundle::ContactSensor { open })
+        // low = 0 = closed
+        let is_open: bool = pin.is_high();
+        trace!("Read contact sensor state, door is open? {is_open}");
+        return Ok(Bundle::ContactSensor { open: is_open })
     }
 
     // Calls `poll()` and return Ok(true), Ok(false), or Err(e)

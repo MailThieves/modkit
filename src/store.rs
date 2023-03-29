@@ -33,7 +33,7 @@ pub struct Store(SqlitePool);
 impl Store {
     /// Connects to a Sqlite database.
     pub async fn connect() -> Result<Self, StoreError> {
-        info!("Using {DB_LOCATION} as database location");
+        trace!("Using {DB_LOCATION} as database location");
         let pool = SqlitePool::connect(DB_LOCATION).await?;
         Ok(Store(pool))
     }

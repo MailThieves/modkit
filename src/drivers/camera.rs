@@ -3,6 +3,9 @@ pub mod camera {
     use std::path::{Path, PathBuf};
     use std::process::Command;
 
+    use std::thread::sleep;
+    use std::time::Duration;
+
     use log::*;
 
     use super::super::light::light;
@@ -11,6 +14,7 @@ pub mod camera {
     pub fn capture_into<P: AsRef<Path>>(path: P) -> Result<PathBuf, DeviceError> {
         trace!("Turning light on to capture image");
         light::set(true)?;
+        sleep(Duration::from_millis(50));
 
         let dir_path: PathBuf = path.as_ref().to_path_buf();
 
@@ -40,11 +44,11 @@ pub mod camera {
         let mut img_path = PathBuf::from(dir_path);
         img_path.push(format!("{}.jpg", chrono::Utc::now().timestamp()));
 
-        trace!("File path: {}", img_path.display());
+        trace!("File path for captured image: {}", img_path.display());
 
         let args = ["--drc", "high", "--width", "800", "--height", "550", "--timeout", "1", "-o", &format!("{}", img_path.display())];
 
-        trace!("Args = {:?}", args);
+        trace!("Image capture command = `raspistill {:?}`", args);
 
         trace!("Taking picture with raspistill");
         Command::new("raspistill")
@@ -52,8 +56,11 @@ pub mod camera {
             .output()
             .expect("Run raspistill command");
 
+        
+        sleep(Duration::from_millis(50));
         trace!("Turning light off after image capture");
         light::set(false)?;
+        
         // And return the path
         Ok(img_path)
     }
