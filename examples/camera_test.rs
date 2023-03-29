@@ -8,7 +8,6 @@ use modkit::prelude::*;
 
 fn main() {
     env_logger::init();
-    error!("Be sure to use info log level");
     info!("Starting camera example");
 
     info!("Running the raspistill command");

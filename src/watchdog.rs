@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use log::*;
+use modkit::prelude::camera;
 
 use crate::drivers::contact_sensor::ContactSensor;
 use crate::drivers::device::{Device, DeviceType};
@@ -39,14 +40,20 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
             event_queue.push(Event::new(
                 EventKind::DoorOpened,
                 Some(DeviceType::ContactSensor),
-                Some(bundle),
+                Some(bundle.clone()),
             ));
 
-
-
-            // Temporary, if the door is closed then queue up a MailDelivered event
+            // Temporary, if the door is closed then get a picture and 
+            // queue up a MailDelivered event
             match door_sensor.state().unwrap().clone() {
                 Bundle::ContactSensor { open: false } => {
+                    trace!("Found door to be open, taking a picture!");
+                    trace!("Capturing into ./img");
+                    match camera::capture_into("./img") {
+                        Ok(_) => trace!("Captured successfully"),
+                        Err(e) => error!("{e}")
+                    };
+
                     info!("Queueing up a MailDelivered Event");
                     event_queue.push(Event::new(
                         EventKind::MailDelivered,

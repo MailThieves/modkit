@@ -1,17 +1,23 @@
 use log::*;
+use cfg_if::cfg_if;
 
 use crate::drivers::Result;
 use crate::drivers::device::Device;
 use crate::model::Bundle;
 
-use std::{fs::File, io::Read};
 
-// Conditional imports
-// Hardware enabled
-#[cfg(feature = "hardware")]
-use rppal::gpio::Gpio;
+cfg_if! {
+    if #[cfg(feature = "hardware")] {
+        // Hardware enabled imports
+        use rppal::gpio::Gpio;
+        
+        const CONTACT_SENSOR_GPIO_PIN: u8 = 18;
+    } else {
+        // Hardware disabled imports
+        use std::{fs::File, io::Read};
 
-const CONTACT_SENSOR_GPIO_PIN: u8 = 18;
+    }
+}
 
 
 #[derive(Debug)]
@@ -78,9 +84,11 @@ impl Device for ContactSensor {
 
     #[cfg(feature = "hardware")]
     fn poll(&self) -> Result<Bundle> {
+        trace!("Connected to contact sensor pin {CONTACT_SENSOR_GPIO_PIN}");
         let pin = Gpio::new()?.get(CONTACT_SENSOR_GPIO_PIN)?.into_input();
         // Switch is NC
         let open: bool = pin.is_low();
+        trace!("Contact sensor pin is low? {open}");
         return Ok(Bundle::ContactSensor { open })
     }
 
@@ -96,7 +104,7 @@ impl Device for ContactSensor {
 
     /// What to do when the watcher determines the device is activated
     fn on_activate(&self) -> Result<()> {
-        info!("===== Contact Sensor is activated!!! =====");
+        info!("=> Contact Sensor is activated");
         Ok(())
     }
 }

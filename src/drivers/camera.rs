@@ -60,6 +60,7 @@ pub mod camera {
 }
 
 #[cfg(not(feature = "hardware"))]
+#[allow(unused)]
 pub mod camera {
     use std::path::{Path, PathBuf};
 

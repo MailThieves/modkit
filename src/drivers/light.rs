@@ -1,9 +1,10 @@
 #[cfg(not(feature = "hardware"))]
+#[allow(unused)]
 pub mod light {
-    use crate::prelude::DeviceError;
+    use super::super::DeviceError;
     use log::*;
 
-    pub fn set(state: bool) -> Result<(), DeviceError> {
+    pub fn set(_state: bool) -> Result<(), DeviceError> {
         error!("You tried to use the light outside of hardware mode");
         error!("Recompile with `--features hardware`");
         Ok(())
@@ -25,24 +26,32 @@ pub mod light {
     const LIGHT_GPIO_PIN: u8 = 21;
 
     pub fn set(state: bool) -> Result<(), DeviceError> {
+        trace!("Connecting to pin {:?}", LIGHT_GPIO_PIN);
         let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
         if state {
+            trace!("Setting light pin {LIGHT_GPIO_PIN} high");
             light_pin.set_high();
         } else {
+            trace!("Setting light pin {LIGHT_GPIO_PIN} low");
             light_pin.set_low();
         }
         Ok(())
     }
 
     pub fn toggle() -> Result<(), DeviceError> {
+        trace!("Connecting to pin {:?}", LIGHT_GPIO_PIN);
         let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
+        trace!("Toggling pin {:?}", LIGHT_GPIO_PIN);
         light_pin.toggle();
         Ok(())
     }
 
     pub fn is_on() -> Result<bool, DeviceError> {
+        trace!("Connecting to pin {:?}", LIGHT_GPIO_PIN);
         let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
-        Ok(light_pin.is_set_high())
+        let state = light_pin.is_set_high();
+        trace!("Found pin to be high? {state}");
+        Ok(state)
     }
 }
 

@@ -10,12 +10,11 @@ fn main() {
     env_logger::init();
 
     let cs = ContactSensor::new();
-    error!("Remember to use RUST_LOG=info");
 
     info!("Contact sensor connected: {:?}", cs.connected());
 
     loop {
-        info!("State = {:?}", cs.poll());
+        info!("pin is low? {:?}", cs.poll());
         sleep(Duration::from_millis(200));
     }
 }
