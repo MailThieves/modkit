@@ -12,6 +12,7 @@ fn main() {
     let cs = ContactSensor::new();
 
     info!("Contact sensor connected: {:?}", cs.connected());
+    info!("Using pin BCM 18");
 
     loop {
         info!("pin is low? {:?}", cs.poll());
