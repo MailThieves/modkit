@@ -1,0 +1,7 @@
+[Unit]
+Description=MailThieves/modkit software
+Documentation=https://github.com/MailThieves/modkit/wiki
+
+[Service]
+Environment="MODKIT_IMG_DIR=~/temp_img RUST_LOG=modkit=info"
+ExecStart=/usr/local/bin/modkit
