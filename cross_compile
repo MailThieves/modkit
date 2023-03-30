@@ -27,3 +27,6 @@ cp $CONTACT_SENSOR_TEST_PATH bin/rpi/watch_contact_sensor
 cp $CAMERA_TEST_PATH bin/rpi/camera_test
 cp $LIGHT_TEST_PATH bin/rpi/light_test
 
+git add .
+git commit -m "Updates executables"
+
