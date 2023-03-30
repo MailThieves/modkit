@@ -1,16 +1,8 @@
-use std::collections::HashMap;
-use std::sync::Arc;
-
+use modkit::prelude::*;
 use log::*;
-
 use tokio::sync::Mutex;
-
-
-mod drivers;
-mod model;
-mod server;
-mod store;
-mod watchdog;
+use std::sync::Arc;
+use std::collections::HashMap;
 
 fn init_logging() {
     // env_logger::Builder::new()
@@ -33,14 +25,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
     warn_env_variables();
 
-    if drivers::hardware_enabled() {
+    if hardware_enabled() {
         info!("Hardware enabled");
     } else {
         warn!("Hardware disabled. This means that either (a) you're not running on the raspberry pi or (b) the GPIO is unavailable");
     }
 
     // Try to connect to the DB so we get a nice error message at boot when it fails
-    match store::Store::connect().await {
+    match Store::connect().await {
         Ok(_) => debug!("DB connected successfully"),
         Err(e) => {
             error!("Database couldn't be reached");

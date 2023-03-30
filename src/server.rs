@@ -20,7 +20,7 @@ pub use http::*;
 pub use ws::*;
 
 /// A list of clients
-pub(crate) type Clients = Arc<Mutex<HashMap<String, Client>>>;
+pub type Clients = Arc<Mutex<HashMap<String, Client>>>;
 
 /// A single client
 #[derive(Clone, Debug)]
