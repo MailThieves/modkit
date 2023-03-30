@@ -25,7 +25,6 @@ pub enum EventKind {
     MailDelivered,
     MailPickedUp,
     DoorOpened,
-    NewImage,
     PollDeviceResult,
     Error,
 }
@@ -42,7 +41,6 @@ impl EventKind {
             Self::MailDelivered => true,
             Self::MailPickedUp => true,
             Self::DoorOpened => true,
-            Self::NewImage => true,
             Self::PollDeviceResult => true,
             Self::Error => true,
             // note that i'm not using _ as a catch all; don't want to accidentally miss a
@@ -67,7 +65,6 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for EventKind {
             "MailDelivered" => EventKind::MailDelivered,
             "MailPickedUp" => EventKind::MailPickedUp,
             "DoorOpened" => EventKind::DoorOpened,
-            "NewImage" => EventKind::NewImage,
             "PollDeviceResult" => EventKind::PollDeviceResult,
             "Error" => EventKind::Error,
             _ => {
