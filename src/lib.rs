@@ -12,6 +12,6 @@ pub mod prelude {
 }
 
 // Only used in main()
-// mod server;
-// mod watchdog;
+mod server;
+mod watchdog;
 

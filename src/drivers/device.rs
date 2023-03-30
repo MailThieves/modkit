@@ -6,7 +6,7 @@ use sqlx::Row;
 
 use crate::store::StoreError;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Clone)]
+#[derive(Debug, Serialize, Deserialize, PartialEq, Clone, Copy)]
 pub enum DeviceType {
     Camera,
     Light,

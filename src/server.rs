@@ -105,7 +105,7 @@ pub mod ws {
 
         match event.kind() {
             EventKind::HealthCheck => handle_health_check(&event),
-            EventKind::PollDevice => handle_poll_device(&event),
+            EventKind::PollDevice => handle_poll_device(&mut event),
             EventKind::EventHistory => handle_event_history().await,
             EventKind::MailStatus => handle_mail_status().await,
             // We already filtered out outgoing events, so this must mean we added a new
@@ -137,9 +137,9 @@ pub mod ws {
         Event::new(EventKind::HealthCheck, None, None)
     }
 
-    pub fn handle_poll_device(event: &Event) -> Event {
+    pub fn handle_poll_device(event: &mut Event) -> Event {
         // If they didn't provide a device type, return with an error
-        let dev_type = match event.device_type() {
+        let dev_type = match event.device_type().copied() {
             Some(d) => d,
             None => {
                 return Event::error(
@@ -152,7 +152,7 @@ pub mod ws {
         match event.poll_device() {
             Ok(bundle) => Event::new(
                 EventKind::PollDeviceResult,
-                Some((*dev_type).clone()),
+                Some(dev_type),
                 Some(bundle),
             ),
             // If we get a device error, then just return that error
@@ -393,8 +393,8 @@ mod tests {
 
     #[test]
     fn test_handle_poll_device_response() {
-        let incoming = Event::new(EventKind::PollDevice, Some(DeviceType::ContactSensor), None);
-        let outgoing = ws::handle_poll_device(&incoming);
+        let mut incoming = Event::new(EventKind::PollDevice, Some(DeviceType::ContactSensor), None);
+        let outgoing = ws::handle_poll_device(&mut incoming);
         assert_eq!(outgoing.kind(), &EventKind::PollDeviceResult);
         assert!(outgoing.data().is_some());
     }

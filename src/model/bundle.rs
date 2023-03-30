@@ -22,7 +22,7 @@ pub enum Bundle {
         msg: String,
     },
     Camera {
-        placeholder: String,
+        file_name: String,
     },
     Light {
         on: bool,
@@ -67,7 +67,7 @@ impl fmt::Display for Bundle {
             Self::ContactSensor { open } => {
                 return write!(f, "ContactSensor({})", open);
             }
-            Self::Camera { placeholder } => return write!(f, "Camera({placeholder})"),
+            Self::Camera { file_name } => return write!(f, "Camera({file_name})"),
             Self::Light { on } => return write!(f, "Light(on: {on})"),
             Self::Error { msg } => return write!(f, "Error({msg})"),
             Self::EventHistory { events } => {

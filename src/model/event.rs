@@ -9,7 +9,7 @@ use warp::ws::Message;
 
 use crate::drivers::contact_sensor::ContactSensor;
 use crate::drivers::device::DeviceType;
-use crate::drivers::DeviceError;
+use crate::drivers::{camera::camera, light::light, DeviceError};
 use crate::model::Bundle;
 use crate::store::StoreError;
 
@@ -25,6 +25,7 @@ pub enum EventKind {
     MailDelivered,
     MailPickedUp,
     DoorOpened,
+    NewImage,
     PollDeviceResult,
     Error,
 }
@@ -41,6 +42,7 @@ impl EventKind {
             Self::MailDelivered => true,
             Self::MailPickedUp => true,
             Self::DoorOpened => true,
+            Self::NewImage => true,
             Self::PollDeviceResult => true,
             Self::Error => true,
             // note that i'm not using _ as a catch all; don't want to accidentally miss a
@@ -65,6 +67,7 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for EventKind {
             "MailDelivered" => EventKind::MailDelivered,
             "MailPickedUp" => EventKind::MailPickedUp,
             "DoorOpened" => EventKind::DoorOpened,
+            "NewImage" => EventKind::NewImage,
             "PollDeviceResult" => EventKind::PollDeviceResult,
             "Error" => EventKind::Error,
             _ => {
@@ -114,7 +117,10 @@ impl<'r> FromRow<'r, SqliteRow> for Event {
 impl Event {
     pub fn new(kind: EventKind, device: Option<DeviceType>, data: Option<Bundle>) -> Self {
         // This is a little messy but ok
-        let timestamp: u32 = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
+        let timestamp: u32 = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as u32;
         Self {
             kind,
             timestamp,
@@ -158,12 +164,15 @@ impl Event {
     // from a WS message
     pub fn populate_timestamp(&mut self) {
         // TODO: Extract this format string to a crate-wide const? It's used in bundle printing
-        self.timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as u32;
+        self.timestamp = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_secs() as u32;
     }
 
     // Finds the device type associated with this event, and poll that device,
-    // returning a data bundle
-    pub fn poll_device(&self) -> Result<Bundle, DeviceError> {
+    // returning a data bundle and setting that data bundle to itself
+    pub fn poll_device(&mut self) -> Result<Bundle, DeviceError> {
         // Returning a String error is kind of ugly here but it's fine for now
         if self.device.is_none() {
             return Err(DeviceError::DeviceNotFound(self.device.clone()));
@@ -172,21 +181,28 @@ impl Event {
         let bundle = match self.device.as_ref().unwrap() {
             DeviceType::ContactSensor => {
                 let sensor = ContactSensor::new();
-                Ok(Bundle::ContactSensor { open: sensor.poll()? })
+                Bundle::ContactSensor {
+                    open: sensor.poll()?,
+                }
             }
             DeviceType::Camera => {
-                // get camera stuff here
-                Ok(Bundle::Camera {
-                    placeholder: format!("Placeholder data"),
-                })
+                // TODO: extract ./img to an environment variable?
+                // Or const?
+                let file_path = camera::capture_into("./img")?;
+                Bundle::Camera {
+                    file_name: format!("{:?}", file_path.file_name().expect("image file name")),
+                }
             }
             DeviceType::Light => {
                 // Get light state
-                Ok(Bundle::Light { on: true })
+                Bundle::Light {
+                    on: light::is_on()?,
+                }
             }
         };
 
-        bundle
+        self.data = Some(bundle.clone());
+        Ok(bundle)
     }
 }
 
