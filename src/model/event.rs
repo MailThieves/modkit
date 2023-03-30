@@ -185,7 +185,7 @@ impl Event {
             DeviceType::Camera => {
                 // TODO: extract ./img to an environment variable?
                 // Or const?
-                let file_path = camera::capture_into("./img")?;
+                let file_path = camera::capture_still()?;
                 Bundle::Camera {
                     file_name: format!("{:?}", file_path.file_name().expect("image file name")),
                 }

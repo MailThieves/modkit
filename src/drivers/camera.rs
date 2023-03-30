@@ -1,5 +1,5 @@
 pub mod camera {
-    use std::path::{Path, PathBuf};
+    use std::path::PathBuf;
     use std::process::Command;
     use std::thread::sleep;
     use std::time::Duration;
@@ -11,7 +11,9 @@ pub mod camera {
     use super::super::DeviceError;
     use crate::drivers::hardware_enabled;
 
-    pub fn capture_into<P: AsRef<Path>>(path: P) -> Result<PathBuf, DeviceError> {
+    const DEFAULT_IMG_DIR: &'static str = "./img";
+
+    pub fn capture_still() -> Result<PathBuf, DeviceError> {
         let hardware = hardware_enabled();
 
         if hardware {
@@ -20,7 +22,10 @@ pub mod camera {
             sleep(Duration::from_millis(50));
         }
 
-        let dir_path: PathBuf = path.as_ref().to_path_buf();
+        let img_dir = std::env::var("MODKIT_IMG_DIR").unwrap_or(String::from(DEFAULT_IMG_DIR));
+        trace!("Using {img_dir} as the image location");
+
+        let dir_path: PathBuf = PathBuf::from(img_dir);
 
         // Make sure the dir exists
         if !dir_path.exists() {
@@ -98,17 +103,17 @@ mod tests {
 
     #[test]
     fn test_capture_and_place_somewhere() {
-        let dir = PathBuf::from("./tmp");
+        let dir = PathBuf::from("./img");
         if !dir.exists() {
             std::fs::create_dir(&dir).unwrap();
         }
         assert!(dir.exists());
 
-        let file_path_res = camera::capture_into(&dir);
+        let file_path_res = camera::capture_still();
         assert!(file_path_res.is_ok());
         let file_path = file_path_res.unwrap();
         assert_eq!(file_path.extension().unwrap(), "jpg");
 
-        std::fs::remove_dir_all("./tmp").unwrap();
+        std::fs::remove_dir_all("./img").unwrap();
     }
 }

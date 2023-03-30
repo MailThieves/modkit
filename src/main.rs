@@ -20,9 +20,20 @@ fn init_logging() {
     env_logger::init();
 }
 
+fn warn_env_variables() {
+    use std::env::var;
+    info!("Some environment variables need to be set");
+    warn!("The following environment variables are possible, these are their current values:");
+    warn!("\tMODKIT_IMG_DIR = \t{:?} \t\t(recommended `./img`)", var("MODKIT_IMG_DIR"));
+    warn!("\tDATABASE_URL = \t\t{:?} \t\t(recommended `sqlite:modkit.db`)", var("DATABASE_URL"));
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
+    warn_env_variables();
+
+    trace!("Testing");
 
     if drivers::hardware_enabled() {
         info!("Hardware enabled");
