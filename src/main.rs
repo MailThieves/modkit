@@ -33,8 +33,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     init_logging();
     warn_env_variables();
 
-    trace!("Testing");
-
     if drivers::hardware_enabled() {
         info!("Hardware enabled");
     } else {

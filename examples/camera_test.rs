@@ -14,5 +14,4 @@ fn main() {
     info!("Set MODKIT_IMG_DIR env variable to override default img location");
 
     camera::capture_still();
-
 }
