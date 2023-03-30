@@ -14,7 +14,7 @@ fn main() {
         light::set(state).expect("set light");
         info!("Light is on? {:?}", light::is_on());
         
-        state = !state;
         sleep(Duration::from_secs(2));
+        state = !state;
     }
 }
