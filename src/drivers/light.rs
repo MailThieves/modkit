@@ -7,7 +7,6 @@ pub mod light {
     const LIGHT_GPIO_PIN: u8 = 21;
 
     pub fn set(state: bool) -> Result<(), DeviceError> {
-        error!("Called!");
         if !hardware_enabled() {
             warn!("You tried to use the light when hardware is not enabled");
             return Ok(());
@@ -15,7 +14,7 @@ pub mod light {
 
         trace!("Connecting to pin {:?}", LIGHT_GPIO_PIN);
         let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
-        // trace!("GPIO reports Pin #{}", light_pin.pin());
+        info!("{:#?}", light_pin);
         if state {
             trace!("Setting light pin {LIGHT_GPIO_PIN} high");
             light_pin.set_high();
