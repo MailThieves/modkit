@@ -7,6 +7,7 @@ pub mod light {
     const LIGHT_GPIO_PIN: u8 = 21;
 
     pub fn set(state: bool) -> Result<(), DeviceError> {
+        error!("Called!");
         if !hardware_enabled() {
             warn!("You tried to use the light when hardware is not enabled");
             return Ok(());
