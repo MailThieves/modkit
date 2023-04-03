@@ -12,16 +12,22 @@ fn main() {
         .unwrap()
         .into_output();
 
+    info!("light pin is low? {}", light_pin.is_set_low());
     light_pin.set_high();
     sleep(Duration::from_millis(200));
+    info!("light pin is low? {}", light_pin.is_set_low());
     light_pin.set_low();
     sleep(Duration::from_millis(200));
+    info!("light pin is low? {}", light_pin.is_set_low());
     light_pin.set_high();
     sleep(Duration::from_millis(200));
+    info!("light pin is low? {}", light_pin.is_set_low());
     light_pin.set_low();
     sleep(Duration::from_millis(200));
+    info!("light pin is low? {}", light_pin.is_set_low());
     light_pin.set_high();
     sleep(Duration::from_millis(200));
+    info!("light pin is low? {}", light_pin.is_set_low());
     light_pin.set_low();
     sleep(Duration::from_millis(200));
 }
