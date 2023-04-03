@@ -14,6 +14,7 @@ pub mod light {
 
         trace!("Connecting to pin {:?}", LIGHT_GPIO_PIN);
         let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
+        light_pin.set_reset_on_drop(false);
         info!("{:#?}", light_pin);
         if state {
             trace!("Setting light pin {LIGHT_GPIO_PIN} high");
