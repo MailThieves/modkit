@@ -12,7 +12,7 @@ fn main() {
     let mut state = true;
     loop {
         light::set(state).expect("set light");
-        info!("Light is on? {:?}", light::is_on());
+        // info!("Light is on? {:?}", light::is_on());
         
         sleep(Duration::from_secs(2));
         state = !state;
