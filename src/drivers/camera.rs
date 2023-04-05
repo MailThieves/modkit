@@ -9,9 +9,8 @@ pub mod camera {
 
     use super::super::light::light;
     use super::super::DeviceError;
+    use crate::defaults;
     use crate::drivers::hardware_enabled;
-
-    const DEFAULT_IMG_DIR: &'static str = "./img";
 
     pub fn capture_still() -> Result<PathBuf, DeviceError> {
         let hardware = hardware_enabled();
@@ -22,7 +21,8 @@ pub mod camera {
             sleep(Duration::from_millis(50));
         }
 
-        let img_dir = std::env::var("MODKIT_IMG_DIR").unwrap_or(String::from(DEFAULT_IMG_DIR));
+        let img_dir = defaults::img_dir();
+
         trace!("Using {img_dir} as the image location");
 
         let dir_path: PathBuf = PathBuf::from(img_dir);

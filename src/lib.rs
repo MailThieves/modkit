@@ -4,6 +4,7 @@ pub mod model;
 pub mod store;
 pub mod server;
 pub mod watchdog;
+pub mod defaults;
 
 pub mod prelude {
     pub use crate::drivers::{
@@ -17,4 +18,5 @@ pub mod prelude {
     pub use crate::watchdog;
     pub use crate::server;
     pub use crate::store::Store;
+    pub use crate::defaults;
 }

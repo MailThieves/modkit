@@ -1,3 +1,4 @@
+use std::env;
 use log::*;
 
 use sqlx::SqlitePool;
@@ -33,8 +34,9 @@ pub struct Store(SqlitePool);
 impl Store {
     /// Connects to a Sqlite database.
     pub async fn connect() -> Result<Self, StoreError> {
-        trace!("Using {DB_LOCATION} as database location");
-        let pool = SqlitePool::connect(DB_LOCATION).await?;
+        let db_location = env::var("DATABASE_URL").unwrap_or(DB_LOCATION.to_string());
+        trace!("Using {db_location} as database location (default {DB_LOCATION})");
+        let pool = SqlitePool::connect(&db_location).await?;
         Ok(Store(pool))
     }
 

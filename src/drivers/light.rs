@@ -1,10 +1,9 @@
 pub mod light {
     use super::super::DeviceError;
     use crate::drivers::hardware_enabled;
-    use rppal::gpio::Gpio;
+    use crate::defaults;
+    use rppal::gpio::{Gpio, OutputPin};
     use log::*;
-
-    const LIGHT_GPIO_PIN: u8 = 21;
 
     pub fn set(state: bool) -> Result<(), DeviceError> {
         if !hardware_enabled() {
@@ -12,15 +11,30 @@ pub mod light {
             return Ok(());
         }
 
-        let mut light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
+        let pin_numbers: [u8; 4] = defaults::light_gpio_pins();
+        // There are always 4
+        let mut pins: Vec<OutputPin> = vec![
+            Gpio::new()?.get(pin_numbers[0])?.into_output(),
+            Gpio::new()?.get(pin_numbers[1])?.into_output(),
+            Gpio::new()?.get(pin_numbers[2])?.into_output(),
+            Gpio::new()?.get(pin_numbers[3])?.into_output(),
+        ];
+
         // This is important
-        light_pin.set_reset_on_drop(false);
+        for pin in pins.iter_mut() {
+            pin.set_reset_on_drop(false);
+        }
+
         if state {
-            trace!("Setting light pin {LIGHT_GPIO_PIN} high");
-            light_pin.set_high();
+            trace!("Setting light pins {:?} high", pin_numbers);
+            for pin in pins.iter_mut() {
+                pin.set_high();
+            }
         } else {
-            trace!("Setting light pin {LIGHT_GPIO_PIN} low");
-            light_pin.set_low();
+            trace!("Setting light pins {:?} low", pin_numbers);
+            for pin in pins.iter_mut() {
+                pin.set_low();
+            }
         }
 
         Ok(())
@@ -31,9 +45,12 @@ pub mod light {
             warn!("You tried to use the light when hardware is not enabled");
             return Ok(false);
         }
-
-        trace!("Connecting to pin {:?}", LIGHT_GPIO_PIN);
-        let light_pin = Gpio::new()?.get(LIGHT_GPIO_PIN)?.into_output();
+        
+        let pin_numbers = defaults::light_gpio_pins();
+        
+        trace!("Connecting to pins {:?}", pin_numbers);
+        // We treat all pins as one, they should always be set the same
+        let light_pin = Gpio::new()?.get(pin_numbers[0])?.into_output();
         let state = light_pin.is_set_high();
         trace!("Found pin to be high? {state}");
         Ok(state)

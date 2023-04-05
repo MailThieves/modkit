@@ -2,9 +2,7 @@ use std::{fs::File, io::Read};
 use log::*;
 use rppal::gpio::Gpio;
 
-use crate::drivers::{Result, hardware_enabled};
-
-const CONTACT_SENSOR_GPIO_PIN: u8 = 18;
+use crate::{drivers::{Result, hardware_enabled}, defaults};
 
 #[derive(Debug)]
 // true = door open
@@ -42,7 +40,7 @@ impl ContactSensor {
         // Get the real values if we're on the pi
         if hardware_enabled() {
             let pin = Gpio::new()?
-                .get(CONTACT_SENSOR_GPIO_PIN)?
+                .get(defaults::contact_sensor_pin())?
                 .into_input_pullup();
             // low = 0 = closed
             return Ok(pin.is_high());
