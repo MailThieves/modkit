@@ -230,7 +230,12 @@ pub mod http {
 
         let routes = register_route(&ws_clients)
             .or(ws_route(&ws_clients))
-            .with(warp::cors().allow_any_origin());
+            .with(warp::cors()
+                .allow_any_origin()
+                .allow_headers(vec![
+                    "Content-Type"
+                ])
+            );
 
         warp::serve(routes).run(([127, 0, 0, 1], 3012)).await
     }
