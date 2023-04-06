@@ -246,7 +246,7 @@ pub mod http {
                 .allow_methods(vec!["GET", "OPTIONS", "POST", "DELETE"]),
         );
 
-        warp::serve(routes).run(([127, 0, 0, 1], 3012)).await
+        warp::serve(routes).run(([0, 0, 0, 0], 3012)).await
     }
 
     // Attaches Clients to a warp route
