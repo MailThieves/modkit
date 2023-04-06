@@ -187,6 +187,8 @@ pub mod ws {
 /// Methods for starting the webserver, and handling registration
 /// and connection to the websocket
 pub mod http {
+    use local_ip_address::linux::local_ip;
+
     use super::*;
 
     #[derive(Debug, Serialize, Deserialize)]
@@ -262,8 +264,13 @@ pub mod http {
         register_client(uuid.clone(), clients.clone()).await;
         info!("Just registered a client with id: {}", uuid);
         info!("All clients: {:#?}", clients);
+
+        // Get our local IP so that the interface knows where to connect
+        // Default to 0.0.0.0 if we're running locally
+        let ip = local_ip().unwrap_or(std::net::Ipv4Addr::from([0, 0, 0, 0]).into());
+
         Ok(json(&RegisterResponse {
-            url: format!("ws://127.0.0.1:3012/ws/{}", uuid),
+            url: format!("ws://{ip}:3012/ws/{}", uuid),
         }))
     }
 
