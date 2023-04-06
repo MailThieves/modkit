@@ -71,6 +71,12 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                         },
                         _ => {}
                     }
+                } else {
+                    event_queue.push(Event::new(
+                        EventKind::MailDelivered,
+                        None,
+                        None
+                    ));
                 }
             }
         }
