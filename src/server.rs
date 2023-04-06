@@ -150,11 +150,7 @@ pub mod ws {
 
         // Otherwise, poll the device and return the data bundle
         match event.poll_device() {
-            Ok(bundle) => Event::new(
-                EventKind::PollDeviceResult,
-                Some(dev_type),
-                Some(bundle),
-            ),
+            Ok(bundle) => Event::new(EventKind::PollDeviceResult, Some(dev_type), Some(bundle)),
             // If we get a device error, then just return that error
             // wrapped in an event
             Err(e) => e.into(),
@@ -228,14 +224,27 @@ pub mod http {
     pub async fn run(ws_clients: &Clients) {
         info!("Running the WebSocket server");
 
-        let routes = register_route(&ws_clients)
-            .or(ws_route(&ws_clients))
-            .with(warp::cors()
+        let routes = register_route(&ws_clients).or(ws_route(&ws_clients)).with(
+            warp::cors()
                 .allow_any_origin()
                 .allow_headers(vec![
-                    "Content-Type"
+                    "Content-Type",
+                    "Accept",
+                    "Accept-Encoding",
+                    "Accept-Language",
+                    "Cache-Control",
+                    "Connection",
+                    "Host",
+                    "Origin",
+                    "Pragma",
+                    "Referer",
+                    "Sec-Fetch-Dest",
+                    "Sec-Fetch-Mode",
+                    "Sec-Fetch-Site",
+                    "User-Agent",
                 ])
-            );
+                .allow_methods(vec!["GET", "OPTIONS", "POST", "DELETE"]),
+        );
 
         warp::serve(routes).run(([127, 0, 0, 1], 3012)).await
     }
@@ -455,7 +464,6 @@ mod tests {
         let outgoing = ws::handle_mail_status().await;
         assert_eq!(outgoing.kind(), &EventKind::Error);
     }
-
 
     #[tokio::test]
     async fn test_handle_mail_status_when_db_not_empty() {
