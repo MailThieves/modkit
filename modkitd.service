@@ -1,0 +1,12 @@
+[Unit]
+Description=MailThieves/modkit software
+Documentation=https://github.com/MailThieves/modkit/wiki
+
+[Service]
+Environment="MODKIT_IMG_DIR=/home/pi/MailThieves/Front_End/public/img/"
+Environment="DATABASE_URL=sqlite:/home/pi/MailThieves/modkit/modkit.db"
+Environment="RUST_LOG=modkit=trace"
+ExecStart=/home/pi/MailThieves/modkit/bin/rpi/modkit
+
+[Install]
+WantedBy=default.target

@@ -35,7 +35,7 @@ impl Store {
     /// Connects to a Sqlite database.
     pub async fn connect() -> Result<Self, StoreError> {
         let db_location = env::var("DATABASE_URL").unwrap_or(DB_LOCATION.to_string());
-        trace!("Using {db_location} as database location (default {DB_LOCATION})");
+        info!("Using {db_location} as database location (default {DB_LOCATION})");
         let pool = SqlitePool::connect(&db_location).await?;
         Ok(Store(pool))
     }
