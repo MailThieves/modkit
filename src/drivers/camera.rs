@@ -65,6 +65,11 @@ pub mod camera {
                 "550",
                 "--timeout",
                 "1",
+                "--nopreview",
+                "--brightness",
+                "50",
+                "--ISO",
+                "100",
                 "-o",
                 &format!("{}", img_path.display()),
             ];
