@@ -3,5 +3,5 @@ Description=MailThieves/modkit software
 Documentation=https://github.com/MailThieves/modkit/wiki
 
 [Service]
-Environment="MODKIT_IMG_DIR=~/temp_img RUST_LOG=modkit=info"
-ExecStart=/usr/local/bin/modkit
+Environment="MODKIT_IMG_DIR=/home/pi/MailThieves/Front_End/public/img/ DATABASE_URL=sqlite:/home/pi/MailThieves/modkit/modkit.db RUST_LOG=modkit=info"
+ExecStart=/home/pi/MailThieves/modkit/bin/rpi/modkit
