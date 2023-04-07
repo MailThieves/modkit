@@ -33,11 +33,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     // Try to connect to the DB so we get a nice error message at boot when it fails
     match Store::connect().await {
-        Ok(_) => debug!("DB connected successfully"),
+        Ok(_) => info!("DB connected successfully"),
         Err(e) => {
             error!("Database couldn't be reached");
             error!("{e}");
-            error!("No DB connection, so I'll run anyway without recording anything.");
         }
     }
 
