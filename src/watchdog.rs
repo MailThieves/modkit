@@ -42,11 +42,9 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
             ));
 
 
-            // When the door changes to closed (ie. someone opens the box then
-            // closes it, mail delivered or picked up)
-            if !is_open {
-                trace!("Door just closed, taking a picture!");
-
+            // When the door opens, take a picture and send that event
+            if is_open {
+                trace!("Door opened, taking a picture (after 1 second delay)");
                 // Make a new event with the associated Camera type
                 let mut new_image_event =
                     Event::new(EventKind::PollDeviceResult, Some(DeviceType::Camera), None);
@@ -54,7 +52,13 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                 new_image_event.poll_device()?;
                 // Then queue it up to be sent
                 event_queue.push(new_image_event);
+            }
 
+
+
+            // When the door changes to closed (ie. someone opens the box then
+            // closes it, mail delivered or picked up)
+            if !is_open {
                 // Normally we should use image processing or something to determine if the mail is picked up,
                 // but I don't have time for that now. This just switches between the statuses.
                 if let Ok(mail_status) = store.get_mail_status().await {
