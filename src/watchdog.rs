@@ -41,7 +41,6 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                 Some(Bundle::ContactSensor { open: is_open }),
             ));
 
-
             // When the door opens, take a picture and send that event
             if is_open {
                 trace!("Door opened, taking a picture (after 1 second delay)");
@@ -53,8 +52,6 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                 // Then queue it up to be sent
                 event_queue.push(new_image_event);
             }
-
-
 
             // When the door changes to closed (ie. someone opens the box then
             // closes it, mail delivered or picked up)
@@ -68,19 +65,15 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                             // then mail is being picked up
                             info!("Queueing up a MailPickedUp Event");
                             event_queue.push(Event::new(EventKind::MailPickedUp, None, None));
-                        },
+                        }
                         EventKind::MailPickedUp => {
                             info!("Queueing up a MailDelivered Event");
                             event_queue.push(Event::new(EventKind::MailDelivered, None, None));
-                        },
+                        }
                         _ => {}
                     }
                 } else {
-                    event_queue.push(Event::new(
-                        EventKind::MailDelivered,
-                        None,
-                        None
-                    ));
+                    event_queue.push(Event::new(EventKind::MailDelivered, None, None));
                 }
             }
         }
