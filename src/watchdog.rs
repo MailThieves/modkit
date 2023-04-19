@@ -41,16 +41,16 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
                 Some(Bundle::ContactSensor { open: is_open }),
             ));
 
-            // When the door opens, take a picture and send that event
+            // When the door opens, take a video and send that event
             if is_open {
-                trace!("Door opened, taking a picture (after 1 second delay)");
+                trace!("Door opened, taking a video (after 1 second delay)");
                 // Make a new event with the associated Camera type
-                let mut new_image_event =
+                let mut new_video_event =
                     Event::new(EventKind::PollDeviceResult, Some(DeviceType::Camera), None);
-                // Call poll_device, which will take a picture and store the data bundle on itself
-                new_image_event.poll_device()?;
+                // Call poll_device, which will take a video and store the data bundle on itself
+                new_video_event.poll_device()?;
                 // Then queue it up to be sent
-                event_queue.push(new_image_event);
+                event_queue.push(new_video_event);
             }
 
             // When the door changes to closed (ie. someone opens the box then

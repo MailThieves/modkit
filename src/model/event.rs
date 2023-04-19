@@ -183,7 +183,7 @@ impl Event {
                 }
             }
             DeviceType::Camera => {
-                let file_path = camera::capture_still()?;
+                let file_path = camera::capture_video()?;
                 Bundle::Camera {
                     file_name: format!("{:?}", file_path.file_name().expect("image file name")),
                 }
