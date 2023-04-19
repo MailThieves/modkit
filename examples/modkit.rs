@@ -1,8 +1,8 @@
-use modkit::prelude::*;
 use log::*;
-use tokio::sync::Mutex;
-use std::sync::Arc;
+use modkit::prelude::*;
 use std::collections::HashMap;
+use std::sync::Arc;
+use tokio::sync::Mutex;
 
 fn init_logging() {
     // env_logger::Builder::new()
@@ -16,8 +16,14 @@ fn warn_env_variables() {
     use std::env::var;
     info!("Some environment variables need to be set");
     warn!("The following environment variables are possible, these are their current values:");
-    warn!("\tMODKIT_IMG_DIR = \t{:?} \t\t(recommended `./img`)", var("MODKIT_IMG_DIR"));
-    warn!("\tDATABASE_URL = \t\t{:?} \t\t(recommended `sqlite:modkit.db`)", var("DATABASE_URL"));
+    warn!(
+        "\tMODKIT_IMG_DIR = \t{:?} \t\t(recommended `./img`)",
+        var("MODKIT_IMG_DIR")
+    );
+    warn!(
+        "\tDATABASE_URL = \t\t{:?} \t\t(recommended `sqlite:modkit.db`)",
+        var("DATABASE_URL")
+    );
 }
 
 #[tokio::main]

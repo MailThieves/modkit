@@ -139,10 +139,21 @@ pub mod camera {
         if hardware {
             // Capture the video as h264
             Command::new("raspivid")
-                .args(["-o", &format!("{}", unproc_video_path.display())])
+                .args([
+                    "-w",
+                    "800",
+                    "-h",
+                    "550",
+                    "-fps",
+                    "25",
+                    "--nopreview",
+                    "-o",
+                    &format!("{}", unproc_video_path.display()),
+                ])
                 .output()
                 .expect("Run raspivid command");
-
+            trace!("Capture unprocessed .h264 video");
+            trace!("Converting with ffmpeg");
             Command::new("ffmpeg")
                 .args([
                     "-f",
@@ -155,6 +166,13 @@ pub mod camera {
                 ])
                 .output()
                 .expect("Convert .h264 to .mp4");
+
+            trace!("Converted");
+
+            match std::fs::remove_file(&unproc_video_path) {
+                Ok(_) => trace!("Removed unprocessed file: {}", unproc_video_path.display()),
+                Err(e) => error!("Couldn't remove unprocessed .h264 file: {e}"),
+            };
 
             sleep(Duration::from_millis(50));
             trace!("Turning light off after video capture");
