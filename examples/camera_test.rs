@@ -13,5 +13,9 @@ fn main() {
     info!("Running the raspistill command");
     info!("Set MODKIT_IMG_DIR env variable to override default img location");
 
-    camera::capture_still();
+    println!("{:?}", camera::capture_still());
+
+    info!("Capturing video");
+    println!("{:?}", camera::capture_video());
+    info!("done");
 }

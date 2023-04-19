@@ -4,7 +4,7 @@ pub mod camera {
     use std::thread::sleep;
     use std::time::Duration;
 
-    use image::{RgbImage, ImageBuffer};
+    use image::{ImageBuffer, RgbImage};
     use log::*;
 
     use super::super::light::light;
@@ -12,15 +12,15 @@ pub mod camera {
     use crate::defaults;
     use crate::drivers::hardware_enabled;
 
-    pub fn capture_still() -> Result<PathBuf, DeviceError> {
-        let hardware = hardware_enabled();
+    enum FileType {
+        Image,
+        Video,
+    }
 
-        if hardware {
-            trace!("Turning light on to capture image");
-            light::set(true)?;
-            sleep(Duration::from_millis(50));
-        }
-
+    /// Prepares the output dir and generates a file name inside that dir.
+    /// Giving FileType::Video will give a path with an .h264 extension,
+    /// FileType::Image will give .jpg
+    fn get_output_file(file_type: FileType) -> Result<PathBuf, DeviceError> {
         let img_dir = defaults::img_dir();
 
         trace!("Using {img_dir} as the image location");
@@ -51,7 +51,23 @@ pub mod camera {
 
         // Create a file name within the dir
         let mut img_path = PathBuf::from(dir_path);
-        img_path.push(format!("{}.jpg", chrono::Utc::now().timestamp()));
+        match file_type {
+            FileType::Image => img_path.push(format!("{}.jpg", chrono::Utc::now().timestamp())),
+            FileType::Video => img_path.push(format!("{}.h264", chrono::Utc::now().timestamp())),
+        }
+        Ok(img_path)
+    }
+
+    pub fn capture_still() -> Result<PathBuf, DeviceError> {
+        let hardware = hardware_enabled();
+
+        if hardware {
+            trace!("Turning light on to capture image");
+            light::set(true)?;
+            sleep(Duration::from_millis(50));
+        }
+
+        let img_path = get_output_file(FileType::Image)?;
 
         trace!("File path for captured image: {}", img_path.display());
 
@@ -97,8 +113,57 @@ pub mod camera {
         // And return the path
         Ok(img_path)
     }
-}
 
+    pub fn capture_video() -> Result<PathBuf, DeviceError> {
+        let hardware = hardware_enabled();
+
+        if hardware {
+            trace!("Turning light on to capture image");
+            light::set(true)?;
+            sleep(Duration::from_millis(50));
+        }
+
+        let unproc_video_path = get_output_file(FileType::Video)?;
+        let mut proc_video_path = unproc_video_path.clone();
+        proc_video_path.set_extension("mp4");
+
+        trace!(
+            "File path for captured preprocessed video: {}",
+            unproc_video_path.display()
+        );
+        trace!(
+            "File path for captured processed video: {}",
+            proc_video_path.display()
+        );
+
+        if hardware {
+            // Capture the video as h264
+            Command::new("raspivid")
+                .args(["-o", &format!("{}", unproc_video_path.display())])
+                .output()
+                .expect("Run raspivid command");
+
+            Command::new("ffmpeg")
+                .args([
+                    "-f",
+                    "h264",
+                    "-i",
+                    &format!("{}", unproc_video_path.display()),
+                    "-c:v",
+                    "copy",
+                    &format!("{}", proc_video_path.display()),
+                ])
+                .output()
+                .expect("Convert .h264 to .mp4");
+
+            sleep(Duration::from_millis(50));
+            trace!("Turning light off after video capture");
+            light::set(false)?;
+        }
+
+        Ok(proc_video_path)
+    }
+}
 
 #[cfg(test)]
 mod tests {
