@@ -9,6 +9,9 @@ set -o pipefail
 set -o xtrace
 
 readonly TARGET_ARCH=armv7-unknown-linux-gnueabihf
+readonly ZERO_TARGET_ARCH=armv6-unknown-linux-gnueabihf
+
+# Raspberry Pi 3b+ compilation instructions
 readonly MODKIT_PATH=./target/${TARGET_ARCH}/release/examples/modkit
 readonly GPIO_EXAMPLE_PATH=./target/${TARGET_ARCH}/release/examples/gpio
 readonly CONTACT_SENSOR_TEST_PATH=./target/${TARGET_ARCH}/release/examples/contact_sensor_test
@@ -16,6 +19,15 @@ readonly CAMERA_TEST_PATH=./target/${TARGET_ARCH}/release/examples/camera_test
 readonly LIGHT_TEST_PATH=./target/${TARGET_ARCH}/release/examples/light_test
 readonly RPPAL_LIGHT_TEST_PATH=./target/${TARGET_ARCH}/release/examples/rppal_light_test
 
+# Raspberry Pi Zero compilation instructions
+readonly ZERO_MODKIT_PATH=./target/${TARGET_ARCH}/release/examples/modkit
+readonly ZERO_GPIO_EXAMPLE_PATH=./target/${TARGET_ARCH}/release/examples/gpio
+readonly ZERO_CONTACT_SENSOR_TEST_PATH=./target/${TARGET_ARCH}/release/examples/contact_sensor_test
+readonly ZERO_CAMERA_TEST_PATH=./target/${TARGET_ARCH}/release/examples/camera_test
+readonly ZERO_LIGHT_TEST_PATH=./target/${TARGET_ARCH}/release/examples/light_test
+readonly ZERO_RPPAL_LIGHT_TEST_PATH=./target/${TARGET_ARCH}/release/examples/rppal_light_test
+
+# 3b+
 cargo build --example modkit --release --target=${TARGET_ARCH}
 cargo build --example gpio --release --target=${TARGET_ARCH}
 cargo build --example contact_sensor_test --release --target=${TARGET_ARCH}
@@ -23,12 +35,29 @@ cargo build --example camera_test --release --target=${TARGET_ARCH}
 cargo build --example light_test --release --target=${TARGET_ARCH}
 cargo build --example rppal_light_test --release --target=${TARGET_ARCH}
 
+# zero
+cargo build --example modkit --release --target=${ZERO_TARGET_ARCH}
+cargo build --example gpio --release --target=${ZERO_TARGET_ARCH}
+cargo build --example contact_sensor_test --release --target=${ZERO_TARGET_ARCH}
+cargo build --example camera_test --release --target=${ZERO_TARGET_ARCH}
+cargo build --example light_test --release --target=${ZERO_TARGET_ARCH}
+cargo build --example rppal_light_test --release --target=${ZERO_TARGET_ARCH}
+
+# 3b+
 cp $MODKIT_PATH bin/rpi/modkit
 cp $GPIO_EXAMPLE_PATH bin/rpi/gpio_status
 cp $CONTACT_SENSOR_TEST_PATH bin/rpi/watch_contact_sensor
 cp $CAMERA_TEST_PATH bin/rpi/camera_test
 cp $LIGHT_TEST_PATH bin/rpi/light_test
 cp $RPPAL_LIGHT_TEST_PATH bin/rpi/rppal_light_test
+
+# zero
+cp $ZERO_MODKIT_PATH bin/zero/modkit
+cp $ZERO_GPIO_EXAMPLE_PATH bin/zero/gpio_status
+cp $ZERO_CONTACT_SENSOR_TEST_PATH bin/zero/watch_contact_sensor
+cp $ZERO_CAMERA_TEST_PATH bin/zero/camera_test
+cp $ZERO_LIGHT_TEST_PATH bin/zero/light_test
+cp $ZERO_RPPAL_LIGHT_TEST_PATH bin/zero/rppal_light_test
 
 git add .
 git commit -m "Updates executables"
