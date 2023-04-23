@@ -16,6 +16,9 @@ pub fn contact_sensor_pin() -> u8 {
     18
 }
 
+pub fn extra_camera_params() -> String {
+    var("MODKIT_CAMERA_EXTRA_PARAMS").unwrap_or("".to_string())
+}
 
 pub fn pin() -> u16 {
     // If we can read the pin from the env var...
