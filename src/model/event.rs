@@ -21,11 +21,13 @@ pub enum EventKind {
     PollDevice,
     EventHistory,
     MailStatus,
+    PinCheck,
     // Outgoing events
     MailDelivered,
     MailPickedUp,
     DoorOpened,
     PollDeviceResult,
+    PinResult,
     Error,
 }
 
@@ -37,11 +39,13 @@ impl EventKind {
             Self::PollDevice => false,
             Self::EventHistory => false,
             Self::MailStatus => false,
+            Self::PinCheck => false,
             // Outgoing events
             Self::MailDelivered => true,
             Self::MailPickedUp => true,
             Self::DoorOpened => true,
             Self::PollDeviceResult => true,
+            Self::PinResult => true,
             Self::Error => true,
             // note that i'm not using _ as a catch all; don't want to accidentally miss a
             // new event type that may be outgoing
@@ -66,6 +70,8 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for EventKind {
             "MailPickedUp" => EventKind::MailPickedUp,
             "DoorOpened" => EventKind::DoorOpened,
             "PollDeviceResult" => EventKind::PollDeviceResult,
+            "PinCheck" => EventKind::PinCheck,
+            "PinResult" => EventKind::PinResult,
             "Error" => EventKind::Error,
             _ => {
                 return Err(

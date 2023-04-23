@@ -31,6 +31,8 @@ pub struct Client {
 
 /// Functions of the websocket
 pub mod ws {
+    use crate::defaults;
+
     use super::*;
 
     // Sends an event to every client in the clients list
@@ -107,6 +109,7 @@ pub mod ws {
             EventKind::HealthCheck => handle_health_check(&event),
             EventKind::PollDevice => handle_poll_device(&mut event),
             EventKind::EventHistory => handle_event_history().await,
+            EventKind::PinCheck => handle_pin_check(&event),
             EventKind::MailStatus => handle_mail_status().await,
             // We already filtered out outgoing events, so this must mean we added a new
             // type of incoming event and didn't write a handler for it
@@ -135,6 +138,26 @@ pub mod ws {
     /// This just lets the client know that it's still connected ok!
     pub fn handle_health_check(_: &Event) -> Event {
         Event::new(EventKind::HealthCheck, None, None)
+    }
+
+    pub fn handle_pin_check(event: &Event) -> Event {
+        // There should be a Bundle, let's make sure
+        if let Some(bundle) = event.data() {
+            // If we can destructure it to a PinCheck bundle
+            if let Bundle::PinCheck { pin } = bundle {
+                // Return a PinResult bundle with a authorized bool
+                return Event::new(
+                    EventKind::PinResult,
+                    None,
+                    Some(Bundle::PinResult {
+                        authorized: pin == &defaults::pin(),
+                    }),
+                );
+            }
+        }
+
+        // If there's any error, just return an error
+        return Event::error("Couldn't get modkit PIN to login!");
     }
 
     pub fn handle_poll_device(event: &mut Event) -> Event {
@@ -418,6 +441,42 @@ mod tests {
         let outgoing = ws::handle_poll_device(&mut incoming);
         assert_eq!(outgoing.kind(), &EventKind::PollDeviceResult);
         assert!(outgoing.data().is_some());
+    }
+
+    #[test]
+    fn test_handle_pin_check_authorized() {
+        let incoming = Event::new(
+            EventKind::PinCheck,
+            None,
+            Some(Bundle::PinCheck { pin: 6245 }),
+        );
+        let outgoing = ws::handle_pin_check(&incoming);
+        assert_eq!(outgoing.kind(), &EventKind::PinResult);
+        assert!(outgoing.data().is_some());
+        if let Some(Bundle::PinResult { authorized }) = outgoing.data() {
+            assert!(authorized);
+        } else {
+            // Want to make sure we execute the above asserting in the if
+            assert!(false);
+        }
+    }
+
+    #[test]
+    fn test_handle_pin_check_not_authorized() {
+        let incoming = Event::new(
+            EventKind::PinCheck,
+            None,
+            Some(Bundle::PinCheck { pin: 8888 }),
+        );
+        let outgoing = ws::handle_pin_check(&incoming);
+        assert_eq!(outgoing.kind(), &EventKind::PinResult);
+        assert!(outgoing.data().is_some());
+        if let Some(Bundle::PinResult { authorized }) = outgoing.data() {
+            assert!(!authorized);
+        } else {
+            // Want to make sure we execute the above asserting in the if
+            assert!(false);
+        }
     }
 
     #[tokio::test]

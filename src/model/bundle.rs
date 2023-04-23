@@ -27,9 +27,15 @@ pub enum Bundle {
     Light {
         on: bool,
     },
+    PinCheck {
+        pin: u16,
+    },
+    PinResult {
+        authorized: bool,
+    },
     EventHistory {
-        events: Vec<Event>
-    }
+        events: Vec<Event>,
+    },
 }
 
 impl Bundle {
@@ -52,9 +58,7 @@ impl<'r> sqlx::FromRow<'r, SqliteRow> for Bundle {
         let json_data = row.try_get("data")?;
         let bundle: Bundle = serde_json::from_str(json_data)
             // This is a bit messy but it works for now
-            .map_err(|e|
-                StoreError::DecodeError(format!("{e}")).into_sqlx_decode_error()
-            )?;
+            .map_err(|e| StoreError::DecodeError(format!("{e}")).into_sqlx_decode_error())?;
         Ok(bundle)
     }
 }
@@ -70,6 +74,10 @@ impl fmt::Display for Bundle {
             Self::Camera { file_name } => return write!(f, "Camera({file_name})"),
             Self::Light { on } => return write!(f, "Light(on: {on})"),
             Self::Error { msg } => return write!(f, "Error({msg})"),
+            Self::PinCheck { pin } => return write!(f, "PinCheck({pin})"),
+            Self::PinResult { authorized } => {
+                return write!(f, "PinResult(authorized: {authorized})")
+            }
             Self::EventHistory { events } => {
                 // This is a little bit fucked but oh well
                 for e in events {
@@ -80,7 +88,6 @@ impl fmt::Display for Bundle {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

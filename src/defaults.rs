@@ -15,3 +15,18 @@ pub fn light_gpio_pins() -> [u8; 4] {
 pub fn contact_sensor_pin() -> u8 {
     18
 }
+
+
+pub fn pin() -> u16 {
+    // If we can read the pin from the env var...
+    if let Ok(overwrite) = var("MODKIT_PIN") {
+        // and we can parse it to a u16...
+        if let Ok(parsed) = overwrite.parse() {
+            // then return
+            return parsed;
+        }
+    }
+
+    // otherwise, this is the default
+    6245
+}
