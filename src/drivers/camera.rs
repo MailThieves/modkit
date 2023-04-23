@@ -86,7 +86,6 @@ pub mod camera {
                 "50",
                 "--ISO",
                 "100",
-                &defaults::extra_camera_params(),
                 "-o",
                 &format!("{}", img_path.display()),
             ];
@@ -148,7 +147,6 @@ pub mod camera {
                     "-fps",
                     "25",
                     "--nopreview",
-                    &defaults::extra_camera_params(),
                     "-o",
                     &format!("{}", unproc_video_path.display()),
                 ])
