@@ -8,13 +8,13 @@ use crate::server::Clients;
 use crate::store::Store;
 use crate::{model::*, server};
 
-/// Runs a continuous loop that watches for the door opening.
-/// When the door opens, send a DoorOpened event.
-/// When the door closes:
-///     1. Take a picture with the camera (light will also turn on automatically)
-///     2. Send a DoorOpened (false) event
-///     3. Send a MainDelivered event
-///     4. Send a PollDeviceResult event with the name of the image in the bundle
+/// Runs a continuous loop that watches for the door state changing.
+/// If the state changes:
+///     1. Immediately send an event that the door opened or closed (skip the queue)
+///     2. If the door opened, record a 5 second video and send a PollDeviceResult (Camera) when
+///        done
+///             Unfortunately this blocks, we can't do it async
+///     3. If the door closed, send either a MailDelivered or MailPickedUp event
 pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> {
     info!("Running the watchdog");
     let store = Store::connect().await?;
@@ -31,15 +31,11 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
         if door_sensor.changed().unwrap_or(false) {
             let is_open: bool = door_sensor.is_open();
 
-            // Queue up an event to send with the door state.
-            // We always send an event when the door opens or closes.
-            // They don't have to do anything with it, but it's there.
-            // We don't want to call poll_device() here because we already did above
-            // event_queue.push(Event::new(
-            //     EventKind::DoorOpened,
-            //     Some(DeviceType::ContactSensor),
-            //     Some(Bundle::ContactSensor { open: is_open }),
-            // ));
+            // Skip the queue and just send an event immediately
+            // We want to skip the queue because right after this, we might record
+            // a video. Recording a video will block for 6 seconds. If we queued up,
+            // it would only send the door event after waiting for the recording, and the
+            // interface may get several events at once which isn't idead'
             let opened_event = Event::new(
                 EventKind::DoorOpened,
                 Some(DeviceType::ContactSensor),
