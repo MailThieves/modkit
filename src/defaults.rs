@@ -16,8 +16,11 @@ pub fn contact_sensor_pin() -> u8 {
     18
 }
 
-pub fn extra_camera_params() -> String {
-    var("MODKIT_CAMERA_EXTRA_PARAMS").unwrap_or("".to_string())
+pub fn flip_vertical() -> bool {
+    match var("MODKIT_FLIP_VERTICAL") {
+        Ok(s) => return s == "1",
+        Err(_) => return false,
+    }
 }
 
 pub fn pin() -> u16 {

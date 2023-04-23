@@ -72,7 +72,7 @@ pub mod camera {
         trace!("File path for captured image: {}", img_path.display());
 
         if hardware {
-            let args = [
+            let mut args = vec![
                 "--drc",
                 "high",
                 "--width",
@@ -86,15 +86,21 @@ pub mod camera {
                 "50",
                 "--ISO",
                 "100",
-                "-o",
-                &format!("{}", img_path.display()),
             ];
+
+            if defaults::flip_vertical() {
+                args.push("-vf");
+            }
+
+            args.push("-o");
+            let path_display = format!("{}", img_path.display());
+            args.push(&path_display);
 
             trace!("Image capture command = `raspistill {:?}`", args);
 
             trace!("Taking picture with raspistill");
             Command::new("raspistill")
-                .args(args)
+                .args(&args)
                 .output()
                 .expect("Run raspistill command");
 
@@ -137,23 +143,25 @@ pub mod camera {
         );
 
         if hardware {
+            let mut args = vec!["-w", "800", "-h", "550", "-fps", "25", "--nopreview"];
+
+            if defaults::flip_vertical() {
+                args.push("-vf")
+            }
+
+            args.push("-o");
+            let path_display = format!("{}", unproc_video_path.display());
+            args.push(&path_display);
+
             // Capture the video as h264
             Command::new("raspivid")
-                .args([
-                    "-w",
-                    "800",
-                    "-h",
-                    "550",
-                    "-fps",
-                    "25",
-                    "--nopreview",
-                    "-o",
-                    &format!("{}", unproc_video_path.display()),
-                ])
+                .args(&args)
                 .output()
                 .expect("Run raspivid command");
+
             trace!("Capture unprocessed .h264 video");
             trace!("Converting with ffmpeg");
+
             Command::new("ffmpeg")
                 .args([
                     "-f",
