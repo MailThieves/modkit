@@ -141,6 +141,8 @@ pub mod ws {
     }
 
     pub fn handle_pin_check(event: &Event) -> Event {
+        info!("Handing pin check!");
+        info!("Got event: {:?}", event);
         // There should be a Bundle, let's make sure
         if let Some(bundle) = event.data() {
             // If we can destructure it to a PinCheck bundle
