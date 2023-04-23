@@ -35,11 +35,17 @@ pub async fn watch(clients: &Clients) -> Result<(), Box<dyn std::error::Error>> 
             // We always send an event when the door opens or closes.
             // They don't have to do anything with it, but it's there.
             // We don't want to call poll_device() here because we already did above
-            event_queue.push(Event::new(
+            // event_queue.push(Event::new(
+            //     EventKind::DoorOpened,
+            //     Some(DeviceType::ContactSensor),
+            //     Some(Bundle::ContactSensor { open: is_open }),
+            // ));
+            let opened_event = Event::new(
                 EventKind::DoorOpened,
                 Some(DeviceType::ContactSensor),
                 Some(Bundle::ContactSensor { open: is_open }),
-            ));
+            );
+            server::ws::send_to_clients(&opened_event, &clients).await;
 
             // When the door opens, take a video and send that event
             if is_open {

@@ -31,27 +31,28 @@ cp $CAMERA_TEST_PATH bin/rpi/camera_test
 cp $LIGHT_TEST_PATH bin/rpi/light_test
 cp $RPPAL_LIGHT_TEST_PATH bin/rpi/rppal_light_test
 
-readonly ZERO_TARGET_ARCH=arm-unknown-linux-gnueabihf
-readonly ZERO_MODKIT_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/modkit
-readonly ZERO_GPIO_EXAMPLE_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/gpio
-readonly ZERO_CONTACT_SENSOR_TEST_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/contact_sensor_test
-readonly ZERO_CAMERA_TEST_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/camera_test
-readonly ZERO_LIGHT_TEST_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/light_test
-readonly ZERO_RPPAL_LIGHT_TEST_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/rppal_light_test
-
-cross build --example modkit --release --target=${ZERO_TARGET_ARCH}
-cross build --example gpio --release --target=${ZERO_TARGET_ARCH}
-cross build --example contact_sensor_test --release --target=${ZERO_TARGET_ARCH}
-cross build --example camera_test --release --target=${ZERO_TARGET_ARCH}
-cross build --example light_test --release --target=${ZERO_TARGET_ARCH}
-cross build --example rppal_light_test --release --target=${ZERO_TARGET_ARCH}
-
-cp $ZERO_MODKIT_PATH bin/zero/modkit
-cp $ZERO_GPIO_EXAMPLE_PATH bin/zero/gpio_status
-cp $ZERO_CONTACT_SENSOR_TEST_PATH bin/zero/watch_contact_sensor
-cp $ZERO_CAMERA_TEST_PATH bin/zero/camera_test
-cp $ZERO_LIGHT_TEST_PATH bin/zero/light_test
-cp $ZERO_RPPAL_LIGHT_TEST_PATH bin/zero/rppal_light_test
+# Zero compilation
+# readonly ZERO_TARGET_ARCH=arm-unknown-linux-gnueabihf
+# readonly ZERO_MODKIT_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/modkit
+# readonly ZERO_GPIO_EXAMPLE_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/gpio
+# readonly ZERO_CONTACT_SENSOR_TEST_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/contact_sensor_test
+# readonly ZERO_CAMERA_TEST_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/camera_test
+# readonly ZERO_LIGHT_TEST_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/light_test
+# readonly ZERO_RPPAL_LIGHT_TEST_PATH=./target/${ZERO_TARGET_ARCH}/release/examples/rppal_light_test
+#
+# cross build --example modkit --release --target=${ZERO_TARGET_ARCH}
+# cross build --example gpio --release --target=${ZERO_TARGET_ARCH}
+# cross build --example contact_sensor_test --release --target=${ZERO_TARGET_ARCH}
+# cross build --example camera_test --release --target=${ZERO_TARGET_ARCH}
+# cross build --example light_test --release --target=${ZERO_TARGET_ARCH}
+# cross build --example rppal_light_test --release --target=${ZERO_TARGET_ARCH}
+#
+# cp $ZERO_MODKIT_PATH bin/zero/modkit
+# cp $ZERO_GPIO_EXAMPLE_PATH bin/zero/gpio_status
+# cp $ZERO_CONTACT_SENSOR_TEST_PATH bin/zero/watch_contact_sensor
+# cp $ZERO_CAMERA_TEST_PATH bin/zero/camera_test
+# cp $ZERO_LIGHT_TEST_PATH bin/zero/light_test
+# cp $ZERO_RPPAL_LIGHT_TEST_PATH bin/zero/rppal_light_test
 
 git add .
 git commit -m "Updates executables"
